@@ -1,0 +1,24 @@
+# Python Virtual Environment
+venv/
+env/
+__pycache__/
+
+# Large Datasets
+News_Category_Dataset_v3.json
+*.json
+
+# Generated output directories
+eda_plots
+model_plots
+
+# LaTeX intermediate build files (but keeping report.tex and report.pdf)
+*.aux
+*.log
+*.out
+*.gz
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# OS specific files
+.DS_Store
