@@ -8,463 +8,462 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/white.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
+    * { box-sizing: border-box; }
+
     :root {
-      --navy:   #1A365D;
-      --blue:   #2B6CB0;
-      --accent: #3182CE;
-      --red:    #9B2335;
-      --green:  #276749;
-      --light:  #EBF4FF;
-      --gray:   #4A5568;
-      --white:  #FFFFFF;
+      --navy: #0f172a;
+      --blue: #2563eb;
+      --blue-soft: #eff6ff;
+      --gray-900: #0f172a;
+      --gray-600: #475569;
+      --gray-400: #94a3b8;
+      --gray-100: #f1f5f9;
+      --gray-50:  #f8fafc;
+      --white: #ffffff;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --shadow-soft: 0 12px 32px -8px rgba(15, 23, 42, 0.08);
+      --shadow-sm: 0 4px 12px -4px rgba(15, 23, 42, 0.06);
     }
 
     .reveal {
-      font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+      font-family: 'Inter', sans-serif;
+      color: var(--gray-900);
+      background-color: var(--gray-50);
     }
 
-    /* Override white theme defaults */
-    .reveal h1, .reveal h2 {
-      color: var(--navy);
-      text-transform: none;
-      font-size: 1.3em;
-      font-weight: normal;
-      margin-bottom: 5px;
-    }
-    .reveal h3 {
-      color: var(--blue);
-      text-transform: none;
-      font-size: 1.05em;
-      font-weight: normal;
-      margin-bottom: 5px;
-    }
-    .reveal p, .reveal li {
-      color: var(--gray);
-      font-size: 0.75em;
-      line-height: 1.4;
-      font-weight: normal;
-    }
-    .reveal li { margin-bottom: 4px; }
-    .reveal strong { color: var(--navy); font-weight: 500; }
-    .reveal em { color: var(--blue); }
-
-    /* Top accent bar on every slide */
+    /* Base Slide Reset */
     .reveal .slides section {
-      border-top: 5px solid var(--navy);
-      padding-top: 5px;
-    }
-
-    /* Slide number badge */
-    .slide-num {
-      display: inline-block;
-      background: var(--navy);
-      color: white;
-      font-size: 0.55em;
-      font-weight: normal;
-      padding: 2px 8px;
-      border-radius: 20px;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-
-    /* Highlight helpers */
-    .hl-red   { color: var(--red);   font-weight: 500; }
-    .hl-green { color: var(--green); font-weight: 500; }
-    .hl-blue  { color: var(--blue);  font-weight: 500; }
-    .hl-navy  { color: var(--navy);  font-weight: 500; }
-
-    /* Callout boxes */
-    .box {
-      border-radius: 4px;
-      padding: 6px 12px;
-      margin: 6px auto;
+      height: 100%;
+      padding: 48px 72px;
+      display: flex !important;
+      flex-direction: column;
       text-align: left;
-      max-width: 95%;
+      justify-content: flex-start;
     }
-    .box-blue  { background: #EBF4FF; border-left: 5px solid var(--blue); }
-    .box-red   { background: #FFF5F5; border-left: 5px solid var(--red); }
-    .box-green { background: #F0FFF4; border-left: 5px solid var(--green); }
-    .box-navy  { background: var(--navy); color: white; padding: 6px 12px; }
-    .box-navy p, .box-navy li { color: #CBD5E0; }
-    .box-navy strong { color: #BEE3F8; }
 
-    /* Stat cards row */
-    .stat-row {
+    /* Clean Header */
+    .slide-header {
       display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin: 6px 0;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      flex-shrink: 0;
     }
-    .stat-card {
-      background: var(--white);
-      border: 1px solid #E2E8F0;
-      border-radius: 6px;
-      padding: 6px 12px;
-      text-align: center;
-      min-width: 80px;
+    .slide-header .badge {
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-weight: 600;
+      font-size: 16px;
+      padding: 6px 14px;
+      border-radius: 24px;
+      letter-spacing: 0.05em;
     }
-    .stat-card .num {
-      font-size: 1.25em;
-      font-weight: 500;
+    .slide-header h2 {
+      font-size: 32px;
+      font-weight: 600;
       color: var(--navy);
-      display: block;
-    }
-    .stat-card .lbl {
-      font-size: 0.55em;
-      color: var(--gray);
+      letter-spacing: -0.02em;
+      margin: 0;
+      text-transform: none;
+      font-family: 'Inter', sans-serif;
     }
 
-    /* Two column layout */
-    .two-col {
+    /* Slide Body */
+    .slide-body {
+      flex: 1;
       display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      text-align: left;
+      flex-direction: column;
+      gap: 24px;
+      overflow: hidden;
     }
-    .two-col > div { flex: 1; }
 
-    /* Feature card */
-    .feat-card {
-      border: 1px solid #E2E8F0;
-      border-radius: 6px;
-      padding: 4px 10px;
-      margin-bottom: 4px;
+    /* Typography */
+    .reveal p, .reveal li { margin: 0; color: var(--gray-600); font-family: 'Inter', sans-serif; }
+    .reveal ul { margin: 0; padding-left: 24px; display: flex; flex-direction: column; gap: 12px; }
+    
+    .text-lg { font-size: 24px; line-height: 1.5; color: var(--gray-900); font-weight: 400; }
+    .text-md { font-size: 20px; line-height: 1.6; font-weight: 400; }
+    .text-sm { font-size: 17px; line-height: 1.6; font-weight: 400; }
+    
+    .emphasis { color: var(--blue); font-weight: 600; }
+    .strong { font-weight: 600; color: var(--navy); }
+    .muted { color: var(--gray-400); }
+
+    /* Layout Grids */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+    /* Card System */
+    .card {
       background: var(--white);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
-    .feat-card .feat-num {
-      font-size: 0.9em;
-      font-weight: 500;
-      margin-right: 4px;
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
-    .feat-card code {
-      display: block;
-      background: #EDF2F7;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.7em;
-      color: var(--navy);
-      margin: 2px 0;
+    
+    /* Stat Strip */
+    .stat-item {
+      background: var(--white);
+      border: 1px solid var(--gray-100);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
+    .stat-item .n { font-size: 36px; font-weight: 700; color: var(--navy); line-height: 1; letter-spacing: -0.02em; }
+    .stat-item .l { font-size: 13px; font-weight: 500; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; }
 
     /* Images */
     .reveal img {
-      max-height: 28vh;
-      border-radius: 4px;
-      border: 1px solid #E2E8F0;
-      margin: 4px 0 !important;
+      max-width: 100%;
+      height: auto;
+      max-height: 40vh;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--gray-100);
+      margin: 0 auto;
+      display: block;
     }
-    .img-caption {
-      font-size: 0.55em;
-      color: #718096;
-      font-style: italic;
-      margin-top: 2px;
+    .img-cap {
+      font-size: 14px;
+      color: var(--gray-400);
+      text-align: center;
+      margin-top: 16px;
     }
 
-    /* Title slide override */
-    .title-slide {
-      background: linear-gradient(135deg, var(--navy) 0%, #0c1a2e 100%) !important;
-      border-top: 5px solid var(--accent) !important;
-    }
-    .reveal .progress { color: var(--accent) !important; }
-    .title-slide h2 { color: white !important; font-size: 1.6em !important; font-weight: normal !important; }
-    .title-slide h3 { color: #BEE3F8 !important; font-weight: normal !important; }
-    .title-slide p  { color: #90CDF4 !important; }
-    .title-slide .stat-card { background: #1E3A5F; border-color: #2B5282; margin-top: 10px;}
-    .title-slide .stat-card .num { color: var(--accent); }
-    .title-slide .stat-card .lbl { color: #90CDF4; }
-
-    /* Step boxes for LDA */
-    .step-row {
-      display: flex;
-      gap: 8px;
-      margin: 6px 0;
-    }
-    .step-box {
-      flex: 1;
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid #E2E8F0;
-    }
-    .step-box .step-head {
-      background: var(--navy);
-      color: white;
-      font-size: 0.6em;
+    /* Code Blocks / Tags */
+    .code-tag {
+      background: var(--gray-50);
+      border: 1px solid var(--gray-100);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 16px;
+      color: var(--gray-900);
+      display: inline-block;
       font-weight: 500;
-      padding: 4px 6px;
     }
-    .step-box .step-body {
-      background: var(--light);
-      padding: 6px 8px;
-      font-size: 0.6em;
-      color: var(--gray);
-      line-height: 1.3;
+
+    /* Title Slide Specifics */
+    .title-slide {
+      justify-content: center !important;
+      align-items: center !important;
+      text-align: center !important;
+      background: var(--white);
     }
+    .title-slide h1 {
+      font-size: 56px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--navy);
+      margin: 0 0 16px 0;
+      line-height: 1.15;
+      font-family: 'Inter', sans-serif;
+      text-transform: none;
+    }
+    .title-slide .subtitle {
+      font-size: 24px;
+      color: var(--gray-600);
+      margin-bottom: 48px;
+      font-weight: 400;
+    }
+    .title-slide .meta {
+      font-size: 17px;
+      color: var(--gray-400);
+      font-weight: 400;
+    }
+
+    /* Fixed Progress Bar */
+    .reveal .progress { height: 4px; border-radius: 4px; }
+    .reveal .progress span { background: var(--blue); }
+    .reveal .controls button { color: var(--navy) !important; }
   </style>
 </head>
 <body>
 <div class="reveal">
 <div class="slides">
 
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 1 — TITLE                        -->
-<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 1 — TITLE -->
 <section class="title-slide">
-  <h2>Dynamic Trend &amp; Event Detector</h2>
-  <h3>Emerging Topic Detection &amp; News Correlation</h3>
-  <p><strong style="color:white;">Mehak Jain</strong> &nbsp;|&nbsp; Advanced Machine Learning — Phase 1 &nbsp;|&nbsp; March 2026</p>
-  <div class="stat-row" style="margin-top:30px;">
-    <div class="stat-card"><span class="num">11K</span><span class="lbl">Articles</span></div>
-    <div class="stat-card"><span class="num">10</span><span class="lbl">Topics Found</span></div>
-    <div class="stat-card"><span class="num">2012–22</span><span class="lbl">Time Span</span></div>
-    <div class="stat-card"><span class="num">3</span><span class="lbl">Novel Features</span></div>
+  <h1>Dynamic Trend &amp; Event Detector</h1>
+  <div class="subtitle">Emerging Topic Detection &amp; News Correlation</div>
+  <div class="grid-4" style="margin-bottom: 48px; width: 100%;">
+    <div class="stat-item"><span class="n">11K</span><span class="l">Articles Analyzed</span></div>
+    <div class="stat-item"><span class="n">10</span><span class="l">Topics Discovered</span></div>
+    <div class="stat-item"><span class="n">11</span><span class="l">Years (2012–22)</span></div>
+    <div class="stat-item"><span class="n">3</span><span class="l">Novel Features</span></div>
+  </div>
+  <div class="meta">
+    <span class="strong">Mehak Jain</span> &nbsp;·&nbsp; Advanced Machine Learning (Phase 1)
   </div>
 </section>
 
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 2 — THE PROBLEM                  -->
-<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 2 — THE PROBLEM -->
 <section>
-  <h2><span class="slide-num">01</span> The Core Problem</h2>
-  <div class="box box-blue" style="font-size:0.9em; text-align:center; font-weight:600; color:var(--navy);">
-    How do you automatically tell if a trending topic is a real news event — or just internet noise?
-  </div>
-  <div class="two-col" style="margin-top:18px;">
-    <div>
-      <div class="box box-green">
-        <strong>✅ Real Event</strong>
-        <ul style="margin-top:8px;">
-          <li>Sustained media coverage over days</li>
-          <li>Growing article velocity</li>
-          <li>Multiple independent sources</li>
-          <li>Appears in GDELT database</li>
+  <div class="slide-header"><div class="badge">01</div><h2>The Core Problem</h2></div>
+  <div class="slide-body" style="justify-content: center;">
+    <p class="text-lg" style="text-align: center; margin-bottom: 32px;">
+      How do you automatically tell if a trending topic is a <span class="strong">real news event</span> — or just <span class="emphasis">internet noise?</span>
+    </p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Real Event</div>
+        <ul class="text-md">
+          <li>Sustained media coverage over multiple days</li>
+          <li>Article velocity accelerates organically</li>
+          <li>Multiple independent sources report it</li>
+          <li>Verifiable in the GDELT database</li>
         </ul>
       </div>
-    </div>
-    <div>
-      <div class="box box-red">
-        <strong>❌ Internet Noise</strong>
-        <ul style="margin-top:8px;">
+      <div class="card" style="background: var(--gray-50); box-shadow: none;">
+        <div class="card-title" style="color: var(--gray-600);">Internet Noise</div>
+        <ul class="text-md">
           <li>Peaks and dies within hours</li>
-          <li>Stays on a single platform</li>
-          <li>No news source coverage</li>
-          <li>Not in GDELT database</li>
+          <li>Confined to a single social platform</li>
+          <li>No mainstream news source coverage</li>
+          <li>Absent from GDELT database</li>
         </ul>
       </div>
     </div>
   </div>
-  <div class="box box-navy" style="margin-top:14px; text-align:center;">
-    <p>Our solution: track <strong>Semantic Velocity</strong> — how fast a topic grows — and verify against real news</p>
+</section>
+
+<!-- SLIDE 3 — DATASET -->
+<section>
+  <div class="slide-header"><div class="badge">02</div><h2>Dataset Architecture</h2></div>
+  <div class="slide-body">
+    <div class="grid-4" style="margin-bottom: 16px;">
+      <div class="stat-item"><span class="n">210K</span><span class="l">Full Corpus</span></div>
+      <div class="stat-item"><span class="n">11K</span><span class="l">Target Subset</span></div>
+      <div class="stat-item"><span class="n">42</span><span class="l">Categories</span></div>
+      <div class="stat-item"><span class="n">1K</span><span class="l">Articles / Year</span></div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+      <img src="eda_plots/eda_overview.png" alt="EDA Overview">
+      <p class="img-cap">HuffPost News Category Dataset (Misra, 2022).<br>Strictly balanced sampling ensures no political volume bias artificially weights the timeline.</p>
+    </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 3 — DATASET                      -->
-<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 4 — EDA FINDING -->
 <section>
-  <h2><span class="slide-num">02</span> Dataset &amp; EDA</h2>
-  <div class="stat-row">
-    <div class="stat-card"><span class="num">210K</span><span class="lbl">Full corpus</span></div>
-    <div class="stat-card"><span class="num">11K</span><span class="lbl">Our subset</span></div>
-    <div class="stat-card"><span class="num">42</span><span class="lbl">Categories</span></div>
-    <div class="stat-card"><span class="num">1K/yr</span><span class="lbl">Balanced sampling</span></div>
-  </div>
-  <img src="eda_plots/eda_overview.png" alt="EDA Overview">
-  <p class="img-caption">HuffPost News Category Dataset (Misra, 2022) — balanced to prevent election-year volume bias</p>
-</section>
-
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 4 — EDA FINDING                  -->
-<!-- ══════════════════════════════════════ -->
-<section>
-  <h2><span class="slide-num">03</span> Non-Obvious EDA Finding</h2>
-  <img src="eda_plots/category_velocity.png" alt="Category Velocity">
-  <div class="box box-blue" style="margin-top:10px;">
-    <p>Politics coverage grew <span class="hl-red">278%</span> during 2016–2017 — the US presidential election cycle is clearly visible as a velocity spike. This proves real-world events warp statistical momentum curves.</p>
+  <div class="slide-header"><div class="badge">03</div><h2>Non-Obvious EDA Finding</h2></div>
+  <div class="slide-body">
+    <div class="grid-2" style="align-items: center; height: 100%;">
+      <div>
+        <p class="text-lg" style="margin-bottom: 24px;">
+          Politics coverage grew <span class="emphasis">278%</span> organically during the 2016–2017 window.
+        </p>
+        <p class="text-md">
+          The US presidential election cycle is directly visible as an aggressive velocity spike. This proves that real-world events inherently warp statistical momentum curves, mathematically validating our temporal tracking approach.
+        </p>
+      </div>
+      <img src="eda_plots/category_velocity.png" alt="Category Velocity">
+    </div>
   </div>
 </section>
 
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 5 — BASELINE                     -->
-<!-- ══════════════════════════════════════ -->
+<!-- SLIDE 5 — BASELINE -->
 <section>
-  <h2><span class="slide-num">04</span> Baseline: TF-IDF</h2>
-  <div class="two-col">
-    <div>
+  <div class="slide-header"><div class="badge">04</div><h2>Baseline: TF-IDF Limitations</h2></div>
+  <div class="slide-body">
+    <div class="grid-2" style="align-items: center; height: 100%;">
       <img src="model_plots/baseline_tfidf.png" alt="TF-IDF Baseline">
-    </div>
-    <div style="padding-top:10px;">
-      <div class="box box-blue">
-        <strong>Key Finding</strong>
-        <p>"trump" is the #1 word across the entire 2012–2022 corpus — confirms political dominance.</p>
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        <div class="card">
+          <div class="card-title">Key Finding</div>
+          <p class="text-md">"Trump" ranks #1 across the entire 2012–2022 corpus, confirming overwhelming political dominance.</p>
+        </div>
+        <div class="card" style="background: var(--gray-50); box-shadow: none;">
+          <div class="card-title" style="color: var(--gray-600);">Architectural Flaw</div>
+          <ul class="text-sm">
+            <li>Treats the entire 11-year corpus as a static block</li>
+            <li>Unable to map when topics evolve or emerge</li>
+            <li>A 2012 article equals a 2022 article mathematically</li>
+            <li>Fails to detect targeted trend momentum</li>
+          </ul>
+        </div>
       </div>
-      <div class="box box-red" style="margin-top:10px;">
-        <strong>Critical Limitation</strong>
-        <ul style="margin-top:6px;">
-          <li>Treats corpus as one static blob</li>
-          <li>Cannot show how topics evolved</li>
-          <li>2012 = 2022 to TF-IDF</li>
-          <li>This is why we need LDA</li>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 6 — LDA THEORY -->
+<section>
+  <div class="slide-header"><div class="badge">05</div><h2>Advanced ML: LDA Theory</h2></div>
+  <div class="slide-body" style="justify-content: center;">
+    <p class="text-lg" style="text-align: center; margin-bottom: 32px;">
+      Documents belong to <span class="strong">multiple topics</span> simultaneously.<br>LDA finds hidden thematic structure rather than just counting words.
+    </p>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title" style="color: var(--gray-900);">Step 1: Topic Mix</div>
+        <p class="text-sm">Sample structural distribution θ from Dirichlet(α).</p>
+        <p class="text-sm muted" style="margin-top: auto;">Ex: 60% Politics, 30% Health</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color: var(--gray-900);">Step 2: Topic Per Word</div>
+        <p class="text-sm">For each word block, sample topic z from Multinomial(θ).</p>
+        <p class="text-sm muted" style="margin-top: auto;">Ex: word 1 → Politics</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color: var(--gray-900);">Step 3: Pick the Word</div>
+        <p class="text-sm">Sample final word directly from topic's vocabulary β.</p>
+        <p class="text-sm muted" style="margin-top: auto;">Ex: Politics → "president"</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 24px; background: var(--gray-50); box-shadow: none;">
+      <p class="text-sm">
+        <span class="strong">The Static Limitation:</span> LDA treats 2012 and 2022 articles identically. It possesses no native temporal tracking. This explicitly motivates our upcoming feature engineering.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 7 — FEATURE ENGINEERING -->
+<section>
+  <div class="slide-header"><div class="badge">06</div><h2>Novel Feature Engineering</h2></div>
+  <div class="slide-body">
+    <div class="grid-2" style="align-items: center; height: 100%;">
+      <div style="display: flex; flex-direction: column; gap: 24px;">
+        <div class="card">
+          <div class="card-title">Temporal Weight</div>
+          <p class="text-sm">Dynamic recency weighting breaks LDA's static assumption.</p>
+          <div><span class="code-tag">w(d) = log(1+Δt) / max(log(1+Δt))</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Category Velocity</div>
+          <p class="text-sm">Scales structural growth rate accurately at publication time.</p>
+          <div><span class="code-tag">V(t) = [N(w_t) - N(w_{t-1})] / N(w_{t-1})</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Text Richness</div>
+          <p class="text-sm">Isolates breaking news via semantic density mappings.</p>
+          <div><span class="code-tag">R(d) = |Unique| / (|Total| + 1)</span></div>
+        </div>
+      </div>
+      <img src="model_plots/feature_engineering.png" alt="Feature Engineering" style="max-height: 45vh;">
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 8 — LDA RESULTS -->
+<section>
+  <div class="slide-header"><div class="badge">07</div><h2>LDA Results — Topics Discovered</h2></div>
+  <div class="slide-body" style="align-items: center; justify-content: center;">
+    <img src="model_plots/lda_topics.png" alt="LDA Topics" style="margin-bottom: 32px;">
+    <p class="text-lg" style="text-align: center; max-width: 900px;">
+      LDA successfully isolated the <span class="strong">COVID-19</span> and <span class="strong">Trump &amp; President</span> clusters completely <span class="emphasis">unsupervised</span>. Pure pattern recognition without single external tags.
+    </p>
+  </div>
+</section>
+
+<!-- SLIDE 9 — TEMPORAL TRACKING -->
+<section>
+  <div class="slide-header"><div class="badge">08</div><h2>Temporal Topic Tracking</h2></div>
+  <div class="slide-body">
+    <img src="model_plots/lda_topic_evolution.png" alt="Topic Evolution" style="margin-bottom: 24px;">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title" style="color: var(--gray-900);">Trump &amp; President</div>
+        <p class="text-md" style="margin-top: -4px;">Near zero in 2012 → <span class="emphasis">278% growth</span> by 2016, precisely matching the timeline of the US presidential campaign cycle.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color: var(--gray-900);">Covid &amp; Court</div>
+        <p class="text-md" style="margin-top: -4px;">Emerges explicitly in 2019 → peaks sharply across <span class="emphasis">2020</span>, aligning mathematically with global pandemic lockdowns.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 10 — SEMANTIC VELOCITY -->
+<section>
+  <div class="slide-header"><div class="badge">09</div><h2>Semantic Velocity</h2></div>
+  <div class="slide-body" style="align-items: center; justify-content: center;">
+    <img src="model_plots/semantic_velocity.png" alt="Semantic Velocity" style="margin-bottom: 32px;">
+    <p class="text-lg" style="text-align: center; max-width: 900px;">
+      Peak year-over-year growth rate mapping. <br>
+      <span class="strong">Trump / President maps 278% in 2014.</span><br>
+      These growth signatures execute as mathematical fingerprints of verified events.
+    </p>
+  </div>
+</section>
+
+<!-- SLIDE 11 — FAILURE ANALYSIS -->
+<section>
+  <div class="slide-header"><div class="badge">10</div><h2>Rigorous Failure Analysis</h2></div>
+  <div class="slide-body">
+    <p class="text-lg">
+      <span class="strong">The Anomaly:</span> The COVID &amp; Court topic statistically peaks in 2014 — five full years before COVID-19 physically existed.
+    </p>
+    <div class="grid-2" style="margin-top: 24px;">
+      <div class="card">
+        <div class="card-title" style="color: var(--gray-900);">2014: ACA Legal Battles</div>
+        <p class="text-sm"><span class="strong">Top words:</span> state, health, court, people</p>
+        <p class="text-sm muted" style="margin-top: 8px;">Context: Affordable Care Act mandates fighting through federal appellate courts.</p>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color: var(--gray-900);">2020: COVID-19 Pandemic</div>
+        <p class="text-sm"><span class="strong">Top words:</span> state, health, court, people</p>
+        <p class="text-sm muted" style="margin-top: 8px;">Context: Global pandemic driving state lockdowns and subsequent court challenges.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 24px; background: var(--gray-50); box-shadow: none;">
+      <p class="text-md">
+        <span class="strong">Why LDA Failed:</span> Bag-of-words strips context. Identical vocabulary equals a Cosine Similarity of ~1.0. <br><br>
+        <span class="emphasis">Phase 2 Matrix:</span> SBERT will computationally map full sentence semantics—encoding these completely separate contexts into isolated embedding space.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- SLIDE 12 — CONCLUSION -->
+<section>
+  <div class="slide-header"><div class="badge">11</div><h2>Conclusion &amp; Phase 2 Roadmap</h2></div>
+  <div class="slide-body">
+    <div class="grid-2" style="align-items: stretch; height: 100%;">
+      <div class="card">
+        <div class="card-title">Phase 1 Achieved</div>
+        <ul class="text-md" style="margin-top: 16px; gap: 20px;">
+          <li>11,000 baseline articles analyzed over 11 years</li>
+          <li>COVID-19 &amp; Politics mapped completely unsupervised</li>
+          <li>Trump topic confirmed at 278% algorithmic growth</li>
+          <li>3 Novel custom features solved LDA's static limitation</li>
+          <li>Failure analysis successfully proved BO-Words boundary</li>
+        </ul>
+      </div>
+      <div class="card" style="background: var(--navy); border: none;">
+        <div class="card-title" style="color: var(--blue-soft);">Phase 2 Pipeline</div>
+        <ul class="text-md" style="margin-top: 16px; gap: 24px; color: var(--white); list-style: none; padding: 0;">
+          <li style="display: flex; gap: 16px;"><span class="code-tag" style="background: rgba(255,255,255,0.1); border: none; color: white;">SBERT</span> <span>Sentence embeddings capture true context</span></li>
+          <li style="display: flex; gap: 16px;"><span class="code-tag" style="background: rgba(255,255,255,0.1); border: none; color: white;">UMAP</span> <span>Mathematical dimensionality reduction</span></li>
+          <li style="display: flex; gap: 16px;"><span class="code-tag" style="background: rgba(255,255,255,0.1); border: none; color: white;">BERTopic</span> <span>Next-gen neural topic modeling</span></li>
+          <li style="display: flex; gap: 16px;"><span class="code-tag" style="background: rgba(255,255,255,0.1); border: none; color: white;">GDELT</span> <span>Verification against real-world event nodes</span></li>
         </ul>
       </div>
     </div>
+    <p class="text-sm muted" style="text-align: center; margin-top: 16px;">
+      This project successfully modernizes Blei et al.'s (2003) prediction that LDA required temporal extensions.
+    </p>
   </div>
-</section>
-
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 6 — LDA THEORY                   -->
-<!-- ══════════════════════════════════════ -->
-<section>
-  <h2><span class="slide-num">05</span> Advanced ML: LDA</h2>
-  <p style="text-align:center;"><em>Every document is a MIX of topics. Every topic is a distribution over words.</em></p>
-  <div class="step-row">
-    <div class="step-box">
-      <div class="step-head">Step 1 — Topic Mix</div>
-      <div class="step-body">Sample topic distribution θ from Dirichlet(α)<br>Ex: 60% Politics, 30% Health, 10% Tech</div>
-    </div>
-    <div class="step-box">
-      <div class="step-head">Step 2 — Pick Topic Per Word</div>
-      <div class="step-body">For each word, sample topic z from Multinomial(θ)<br>Ex: word 1 → Politics, word 2 → Health</div>
-    </div>
-    <div class="step-box">
-      <div class="step-head">Step 3 — Pick Word</div>
-      <div class="step-body">Sample word from topic's vocabulary β<br>Ex: Politics → "president", Health → "covid"</div>
-    </div>
-  </div>
-  <div class="box box-red" style="margin-top:10px;">
-    <strong>LDA's limitation:</strong> Static corpus assumption — treats 2012 and 2022 articles identically. This directly motivates our 3 novel features.
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 7 — FEATURE ENGINEERING          -->
-<!-- ══════════════════════════════════════ -->
-<section>
-  <h2><span class="slide-num">06</span> Novel Feature Engineering</h2>
-  <img src="model_plots/feature_engineering.png" alt="Feature Engineering">
-  <div class="two-col" style="margin-top:10px;">
-    <div class="feat-card">
-      <span class="feat-num hl-blue">01</span><strong>Temporal Weight</strong>
-      <code>w(d) = log(1 + Δt) / max(log(1 + Δt))</code>
-      <p>Recent articles weighted higher. Mean = 0.88</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-num hl-green">02</span><strong>Category Velocity</strong>
-      <code>V(c,t) = [N(c,Wt) - N(c,Wt-1)] / N(c,Wt-1)</code>
-      <p>Growth rate at time of publication</p>
-    </div>
-    <div class="feat-card">
-      <span class="feat-num hl-red">03</span><strong>Text Richness</strong>
-      <code>R(d) = |Unique Words| / (|Total Words| + 1)</code>
-      <p>Semantic density. Mean = 0.86</p>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 8 — LDA RESULTS                  -->
-<!-- ══════════════════════════════════════ -->
-<section>
-  <h2><span class="slide-num">07</span> LDA Results — Topics Discovered</h2>
-  <img src="model_plots/lda_topics.png" alt="LDA Topics">
-  <div class="box box-green" style="margin-top:8px;">
-    <p>LDA discovered <span class="hl-red">COVID-19</span> (covid/court/coronavirus) and <span class="hl-blue">Trump &amp; President</span> topics completely <strong>unsupervised</strong> — no labels, no guidance.</p>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 9 — TEMPORAL TRACKING            -->
-<!-- ══════════════════════════════════════ -->
-<section>
-  <h2><span class="slide-num">08</span> Temporal Topic Tracking</h2>
-  <img src="model_plots/lda_topic_evolution.png" alt="Topic Evolution">
-  <div class="two-col" style="margin-top:10px;">
-    <div class="box box-blue">
-      <strong>Trump &amp; President</strong>
-      <p>Near zero in 2012 → <span class="hl-red">278% growth</span> by 2016 — exactly matching the US presidential campaign.</p>
-    </div>
-    <div class="box box-red">
-      <strong>Covid &amp; Court</strong>
-      <p>Emerges in 2019 → peaks sharply in <span class="hl-red">2020</span> — exactly when global lockdowns began.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 10 — SEMANTIC VELOCITY           -->
-<!-- ══════════════════════════════════════ -->
-<section>
-  <h2><span class="slide-num">09</span> Semantic Velocity</h2>
-  <img src="model_plots/semantic_velocity.png" alt="Semantic Velocity">
-  <div class="box box-blue" style="margin-top:10px;">
-    <p>Peak growth rate per topic with year annotation. Trump/President shows <span class="hl-navy">278% peak velocity in 2014</span>. This is the mathematical fingerprint of a real-world emerging event.</p>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 11 — FAILURE ANALYSIS            -->
-<!-- ══════════════════════════════════════ -->
-<section>
-  <h2><span class="slide-num">10</span> Failure Analysis</h2>
-  <div class="box box-red">
-    <strong>The Failure:</strong> COVID &amp; Court topic peaks in 2014 — five years <em>before</em> COVID-19 existed.
-  </div>
-  <div class="two-col" style="margin-top:14px;">
-    <div>
-      <p><strong class="hl-blue">2014 — ACA Legal Challenges</strong></p>
-      <p>Top words: <em>state, health, court, people</em></p>
-      <p>Context: Affordable Care Act court battles over health mandates.</p>
-    </div>
-    <div>
-      <p><strong class="hl-red">2020 — COVID-19 Pandemic</strong></p>
-      <p>Top words: <em>state, health, court, people</em></p>
-      <p>Context: COVID pandemic, state health lockdowns, court challenges.</p>
-    </div>
-  </div>
-  <div class="box box-navy" style="margin-top:12px;">
-    <p>LDA's bag-of-words assumption strips context entirely. Both eras share identical vocabulary → cosine similarity ≈ 1.0 → same topic. <strong>Phase 2 fix:</strong> SBERT encodes full sentence meaning, separating these two contexts in embedding space.</p>
-  </div>
-  <div class="box box-green" style="margin-top:10px;">
-    <p><strong>This failure is a strength</strong> — it precisely identifies LDA's limitation and scientifically motivates Phase 2.</p>
-  </div>
-</section>
-
-<!-- ══════════════════════════════════════ -->
-<!-- SLIDE 12 — CONCLUSION                  -->
-<!-- ══════════════════════════════════════ -->
-<section class="title-slide">
-  <h2>Conclusion &amp; Phase 2</h2>
-  <div class="two-col" style="margin-top:20px; text-align:left;">
-    <div>
-      <h3 style="color:#BEE3F8 !important;">Phase 1 — Achieved</h3>
-      <ul style="color:#CBD5E0;">
-        <li>11,000 articles across 2012–2022 analyzed</li>
-        <li>COVID-19 &amp; Politics discovered unsupervised</li>
-        <li>Trump topic grew 278% matching election cycle</li>
-        <li>3 novel features address LDA's static assumption</li>
-        <li>Failure analysis reveals bag-of-words limitation</li>
-      </ul>
-    </div>
-    <div>
-      <h3 style="color:#BEE3F8 !important;">Phase 2 — Roadmap</h3>
-      <div class="feat-card" style="background:#1E3A5F; border-color:#2B5282; margin-bottom:8px;">
-        <p style="color:#BEE3F8; margin:0;"><strong style="color:var(--accent);">SBERT</strong> — Sentence embeddings that understand meaning</p>
-      </div>
-      <div class="feat-card" style="background:#1E3A5F; border-color:#2B5282; margin-bottom:8px;">
-        <p style="color:#BEE3F8; margin:0;"><strong style="color:var(--accent);">UMAP</strong> — Reduce 384D → 5D for clustering</p>
-      </div>
-      <div class="feat-card" style="background:#1E3A5F; border-color:#2B5282; margin-bottom:8px;">
-        <p style="color:#BEE3F8; margin:0;"><strong style="color:var(--accent);">BERTopic</strong> — Neural topic modeling</p>
-      </div>
-      <div class="feat-card" style="background:#1E3A5F; border-color:#2B5282;">
-        <p style="color:#BEE3F8; margin:0;"><strong style="color:var(--accent);">GDELT</strong> — Real-world event verification</p>
-      </div>
-    </div>
-  </div>
-  <p style="color:#718096; font-size:0.65em; margin-top:20px; font-style:italic;">
-    This project realizes Blei et al.'s (2003) prediction that LDA would be extended with temporal topic series — 20 years later.
-  </p>
 </section>
 
 </div>
@@ -474,12 +473,16 @@
 <script>
   Reveal.initialize({
     hash: true,
-    transition: 'slide',
+    transition: 'fade',
     transitionSpeed: 'fast',
     controls: true,
     progress: true,
-    center: true,
+    center: false,
     slideNumber: 'c/t',
+    width: 1280,
+    height: 720,
+    margin: 0,
+    disableLayout: false,
   });
 </script>
 </body>
