@@ -29,29 +29,31 @@
     .reveal h1, .reveal h2 {
       color: var(--navy);
       text-transform: none;
-      font-size: 1.7em;
-      font-weight: 700;
+      font-size: 1.3em;
+      font-weight: normal;
+      margin-bottom: 5px;
     }
     .reveal h3 {
       color: var(--blue);
       text-transform: none;
-      font-size: 1.25em;
-      font-weight: 600;
-      margin-bottom: 0.5em;
+      font-size: 1.05em;
+      font-weight: normal;
+      margin-bottom: 5px;
     }
     .reveal p, .reveal li {
       color: var(--gray);
-      font-size: 0.82em;
-      line-height: 1.65;
+      font-size: 0.75em;
+      line-height: 1.4;
+      font-weight: normal;
     }
-    .reveal li { margin-bottom: 10px; }
-    .reveal strong { color: var(--navy); }
+    .reveal li { margin-bottom: 4px; }
+    .reveal strong { color: var(--navy); font-weight: 500; }
     .reveal em { color: var(--blue); }
 
     /* Top accent bar on every slide */
     .reveal .slides section {
       border-top: 5px solid var(--navy);
-      padding-top: 10px;
+      padding-top: 5px;
     }
 
     /* Slide number badge */
@@ -60,31 +62,31 @@
       background: var(--navy);
       color: white;
       font-size: 0.55em;
-      font-weight: 700;
-      padding: 3px 10px;
+      font-weight: normal;
+      padding: 2px 8px;
       border-radius: 20px;
       vertical-align: middle;
-      margin-right: 10px;
+      margin-right: 8px;
     }
 
     /* Highlight helpers */
-    .hl-red   { color: var(--red);   font-weight: bold; }
-    .hl-green { color: var(--green); font-weight: bold; }
-    .hl-blue  { color: var(--blue);  font-weight: bold; }
-    .hl-navy  { color: var(--navy);  font-weight: bold; }
+    .hl-red   { color: var(--red);   font-weight: 500; }
+    .hl-green { color: var(--green); font-weight: 500; }
+    .hl-blue  { color: var(--blue);  font-weight: 500; }
+    .hl-navy  { color: var(--navy);  font-weight: 500; }
 
     /* Callout boxes */
     .box {
-      border-radius: 6px;
-      padding: 12px 18px;
-      margin: 10px auto;
+      border-radius: 4px;
+      padding: 6px 12px;
+      margin: 6px auto;
       text-align: left;
-      max-width: 90%;
+      max-width: 95%;
     }
     .box-blue  { background: #EBF4FF; border-left: 5px solid var(--blue); }
     .box-red   { background: #FFF5F5; border-left: 5px solid var(--red); }
     .box-green { background: #F0FFF4; border-left: 5px solid var(--green); }
-    .box-navy  { background: var(--navy); color: white; border-radius: 6px; padding: 10px 18px; }
+    .box-navy  { background: var(--navy); color: white; padding: 6px 12px; }
     .box-navy p, .box-navy li { color: #CBD5E0; }
     .box-navy strong { color: #BEE3F8; }
 
@@ -92,33 +94,32 @@
     .stat-row {
       display: flex;
       justify-content: center;
-      gap: 16px;
-      margin: 16px 0;
+      gap: 10px;
+      margin: 6px 0;
     }
     .stat-card {
       background: var(--white);
       border: 1px solid #E2E8F0;
-      border-radius: 8px;
-      padding: 10px 20px;
+      border-radius: 6px;
+      padding: 6px 12px;
       text-align: center;
-      min-width: 100px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.03);
+      min-width: 80px;
     }
     .stat-card .num {
-      font-size: 1.6em;
-      font-weight: 800;
+      font-size: 1.25em;
+      font-weight: 500;
       color: var(--navy);
       display: block;
     }
     .stat-card .lbl {
-      font-size: 0.65em;
+      font-size: 0.55em;
       color: var(--gray);
     }
 
     /* Two column layout */
     .two-col {
       display: flex;
-      gap: 20px;
+      gap: 10px;
       align-items: flex-start;
       text-align: left;
     }
@@ -127,39 +128,38 @@
     /* Feature card */
     .feat-card {
       border: 1px solid #E2E8F0;
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
+      border-radius: 6px;
+      padding: 4px 10px;
+      margin-bottom: 4px;
       background: var(--white);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.02);
     }
     .feat-card .feat-num {
-      font-size: 1.1em;
-      font-weight: 800;
-      margin-right: 6px;
+      font-size: 0.9em;
+      font-weight: 500;
+      margin-right: 4px;
     }
     .feat-card code {
       display: block;
       background: #EDF2F7;
-      padding: 4px 8px;
+      padding: 2px 6px;
       border-radius: 4px;
-      font-size: 0.72em;
+      font-size: 0.7em;
       color: var(--navy);
-      margin: 6px 0;
+      margin: 2px 0;
     }
 
     /* Images */
     .reveal img {
-      max-height: 42vh;
-      border-radius: 6px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+      max-height: 28vh;
+      border-radius: 4px;
       border: 1px solid #E2E8F0;
+      margin: 4px 0 !important;
     }
     .img-caption {
-      font-size: 0.62em;
+      font-size: 0.55em;
       color: #718096;
       font-style: italic;
-      margin-top: 4px;
+      margin-top: 2px;
     }
 
     /* Title slide override */
@@ -168,18 +168,18 @@
       border-top: 5px solid var(--accent) !important;
     }
     .reveal .progress { color: var(--accent) !important; }
-    .title-slide h2 { color: white !important; font-size: 2em !important; }
-    .title-slide h3 { color: #BEE3F8 !important; }
+    .title-slide h2 { color: white !important; font-size: 1.6em !important; font-weight: normal !important; }
+    .title-slide h3 { color: #BEE3F8 !important; font-weight: normal !important; }
     .title-slide p  { color: #90CDF4 !important; }
-    .title-slide .stat-card { background: #1E3A5F; border-color: #2B5282; }
+    .title-slide .stat-card { background: #1E3A5F; border-color: #2B5282; margin-top: 10px;}
     .title-slide .stat-card .num { color: var(--accent); }
     .title-slide .stat-card .lbl { color: #90CDF4; }
 
     /* Step boxes for LDA */
     .step-row {
       display: flex;
-      gap: 14px;
-      margin: 14px 0;
+      gap: 8px;
+      margin: 6px 0;
     }
     .step-box {
       flex: 1;
@@ -190,16 +190,16 @@
     .step-box .step-head {
       background: var(--navy);
       color: white;
-      font-size: 0.72em;
-      font-weight: 700;
-      padding: 6px 10px;
+      font-size: 0.6em;
+      font-weight: 500;
+      padding: 4px 6px;
     }
     .step-box .step-body {
       background: var(--light);
-      padding: 8px 10px;
-      font-size: 0.72em;
+      padding: 6px 8px;
+      font-size: 0.6em;
       color: var(--gray);
-      line-height: 1.5;
+      line-height: 1.3;
     }
   </style>
 </head>
