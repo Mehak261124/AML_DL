@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Dynamic Trend & Event Detector Presentation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Setup Reveal.js theme and styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/blood.min.css">
+  
+  <!-- Custom Styling for this presentation -->
+  <style>
+    .reveal img {
+      max-height: 50vh;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .reveal h2 { 
+      text-transform: none; 
+      font-size: 1.8em; 
+      color: #fff;
+    }
+    .reveal h3 { 
+      color: #e23b49; 
+      text-transform: none; 
+      margin-bottom: 30px; 
+      font-size: 1.4em;
+    }
+    .reveal p, .reveal li { 
+      font-size: 0.85em; 
+      line-height: 1.6; 
+      color: #ddd; 
+    }
+    .reveal ul {
+      margin-top: 20px;
+    }
+    .reveal li {
+      margin-bottom: 12px;
+    }
+    .highlight { 
+      color: #e23b49; 
+      font-weight: bold; 
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- Slide 1: Title -->
+      <section>
+        <h2>Dynamic Trend & Event Detector</h2>
+        <h3>Emerging Topic Detection & News Correlation</h3>
+        <p>Built by: <strong>Mehak Jain</strong></p>
+        <p><small style="color: #888;">Advanced Machine Learning & Deep Learning — Phase 1</small></p>
+      </section>
+
+      <!-- Slide 2: Motivation -->
+      <section>
+        <h3>1. The Core Problem</h3>
+        <p>How do we distinguish a <span class="highlight">fleeting social meme</span> from a <span class="highlight">structural real-world event</span>?</p>
+        <br>
+        <ul>
+          <li>Standard models like Latent Dirichlet Allocation (LDA) are purely static.</li>
+          <li>They treat an article published in 2012 identically to one from 2022.</li>
+          <li><strong>Our Goal:</strong> Engineer robust <span class="highlight">Semantic Velocity</span> to algorithmically track chronological momentum constraints.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 3: EDA & The 2016 Spike -->
+      <section>
+        <h3>2. Uncovering Dataset Momentum</h3>
+        <img src="eda_plots/category_velocity.png" alt="Category Velocity">
+        <p>A non-obvious pattern that dictated our trajectory: Political coverage surged exactly <span class="highlight">278%</span> organically during the US election timeframe, proving that real-world events inherently warp statistical velocity curves.</p>
+      </section>
+
+      <!-- Slide 4: Baseline Limit -->
+      <section>
+        <h3>3. The Static Architectural Limit</h3>
+        <img src="model_plots/baseline_tfidf.png" alt="TF IDF Limit">
+        <p>A simple baseline confirms US politics ("Trump") dominated the entire 11-year span. However, this treats time linearly as one <strong>monolithic structural block</strong>—preventing us from isolating <em>when</em> independent trends emerged.</p>
+      </section>
+
+      <!-- Slide 5: Breakthrough -->
+      <section>
+        <h3>4. The Breakthrough: Features</h3>
+        <img src="model_plots/feature_engineering.png" alt="Features">
+        <ul>
+          <li><strong>Temporal Weighting:</strong> Logarithmic recency actively breaks the static sequence assumption.</li>
+          <li><strong>Category Velocity:</strong> Captures structural category growth simultaneously mapping real-time scale.</li>
+          <li><strong>Text Richness:</strong> Document density metrics isolating highly informative media tracking lines.</li>
+        </ul>
+      </section>
+
+      <!-- Slide 6: Results -->
+      <section>
+        <h3>5. LDA Unsupervised Output</h3>
+        <img src="model_plots/lda_topics.png" alt="LDA Topics">
+        <p>Fitted natively with our engineered components serving as functional mathematical boundaries, the LDA parameters mapped <span class="highlight">COVID-19</span> and <span class="highlight">Trump</span> clusters effortlessly without any supervised tagging.</p>
+      </section>
+
+      <!-- Slide 7: Topic Evolution -->
+      <section>
+        <h3>6. Tracking Visual Spikes</h3>
+        <img src="model_plots/lda_topic_evolution.png" alt="LDA Topic Evolution">
+        <p>The temporal tracking algorithm confirms that Topic 7 (Trump/President) mechanically spiked directly surrounding 2014-2016 exclusively, perfectly aligning exactly matching EDA findings.</p>
+      </section>
+
+      <!-- Slide 8: Failure Analysis -->
+      <section>
+        <h3>7. Rigorous Failure Analysis</h3>
+        <p>Why did our model hallucinate the <strong>COVID-19 Cluster</strong> surging heavily in <strong>2014</strong>—years prior to the virus?</p>
+        <br>
+        <p style="font-size: 0.75em;">In 2014, Affordable Care Act legal battles universally utilized: <span class="highlight">"state, health, court, people"</span>.</p>
+        <p style="font-size: 0.75em;">In 2020, COVID-19 explicit news utilized: <span class="highlight">"state, health, court, people"</span>.</p>
+        <br>
+        <p>LDA's Bag-of-Words math collapses sequence boundary context vectors entirely. <strong>Cosine Similarity $\approx$ 1</strong>.</p>
+      </section>
+
+      <!-- Slide 9: Conclusion -->
+      <section>
+        <h3>8. Conclusion & Phase 2</h3>
+        <ul>
+          <li><strong>Phase 1 Finished:</strong> Successfully tracked discrete topic mapping variables and mathematically formalized <span class="highlight">Semantic Velocity</span> parameters mapping structural tracking assumptions.</li>
+          <li><strong>The Limit:</strong> Bag-of-words natively mathematically collapses localized density boundaries.</li>
+          <li><strong>Phase 2 Trajectory:</strong> We directly pivot to Deep Learning structures utilizing <strong>Sentence-BERT (SBERT)</strong> mapped to <strong>BERTopic</strong> natively tracking explicit dense dimensional context arrays.</li>
+        </ul>
+      </section>
+      
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      transition: 'zoom', // nice professional zoom transition
+      controls: true,
+      progress: true,
+      center: true
+    });
+  </script>
+</body>
+</html>

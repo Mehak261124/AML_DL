@@ -8,8 +8,7 @@ News_Category_Dataset_v3.json
 *.json
 
 # Generated output directories
-eda_plots
-model_plots
+# The plots are needed for GitHub Pages so they are tracked
 
 # LaTeX intermediate build files (but keeping report.tex and report.pdf)
 *.aux
