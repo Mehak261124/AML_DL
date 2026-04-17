@@ -14,7 +14,7 @@
 \usepackage{enumitem}
 
 \title{Dynamic Trend \& Event Detector: Emerging Topic Detection \& News Correlation using Neural Topic Modeling}
-\author{Mehak Jain 230079, Anuj Kumar Singh 230073 \\ \small Course: Advanced Machine Learning and Deep Learning --- Phase 1 \& 2}
+\author{Mehak Jain 230079, Anuj Kumar Singh 230073 \\ \small Course: Advanced Machine Learning and Deep Learning - Phase 1 \& 2}
 \date{}
 
 \begin{document}
@@ -22,21 +22,21 @@
 \maketitle
 
 \begin{abstract}
-We address distinguishing fleeting social media trends from significant real-world events by tracking semantic velocity across longitudinal text corpora. Using 11,000 HuffPost articles (2012--2022), we implement a two-phase architecture. \textbf{Phase 1} applies TF-IDF baseline extraction and LDA topic modeling with three novel temporal features, discovering COVID-19 and Trump/President topics unsupervised. Failure analysis traces topic conflation to LDA's bag-of-words assumption. \textbf{Phase 2} resolves this via BERTopic --- Sentence-BERT embeddings (384-dim), UMAP dimensionality reduction, HDBSCAN density clustering, and c-TF-IDF representation --- discovering 15 topics with correct COVID-19 temporal placement (1,036\% velocity in 2020), verified ACA/COVID context separation (cosine similarity 0.27 vs BoW $\sim$0.80), and confirmed via ablation study that contextual embeddings alone account for a 6-year temporal correction in COVID topic placement. We propose a \textbf{Phase 3} hybrid approach to address remaining limitations.
+We address distinguishing fleeting social media trends from significant real-world events by tracking semantic velocity across longitudinal text corpora. Using 11,000 HuffPost articles (2012--2022), we implement a two-phase architecture. \textbf{Phase 1} applies TF-IDF baseline extraction and LDA topic modeling with three novel temporal features, discovering COVID-19 and Trump/President topics unsupervised. Failure analysis traces topic conflation to LDA's bag-of-words assumption. \textbf{Phase 2} resolves this via BERTopic - Sentence-BERT embeddings (384-dim), UMAP dimensionality reduction, HDBSCAN density clustering, and c-TF-IDF representation - discovering 15 topics with correct COVID-19 temporal placement (1,036\% velocity in 2020), verified ACA/COVID context separation (cosine similarity 0.27 vs BoW $\sim$0.80), and confirmed via ablation study that contextual embeddings alone account for a 6-year temporal correction in COVID topic placement. We propose a \textbf{Phase 3} hybrid approach to address remaining limitations.
 \end{abstract}
 
 \vspace{-0.3cm}
 \section{Introduction}
-The exponential expansion of digital media renders it functionally impossible to manually distinguish superficial, fleeting social media trends from substantive, lasting real-world events. We introduce \textit{semantic velocity} as our core mathematical concept --- the rate of change of topic prevalence in a text corpus over time. While standard topic models provide thematic extraction, they fundamentally fail on continuous temporal streams because they treat all documents as temporally identical. As Allan et al.~\cite{allan1998} established, event detection requires chronological contextualization. Our two-phase methodology bridges classical probabilistic models (LDA) with modern neural approaches (BERTopic), proving that contextual embeddings resolve semantic conflation that bag-of-words models cannot.
+The exponential expansion of digital media renders it functionally impossible to manually distinguish superficial, fleeting social media trends from substantive, lasting real-world events. We introduce \textit{semantic velocity} as our core mathematical concept - the rate of change of topic prevalence in a text corpus over time. While standard topic models provide thematic extraction, they fundamentally fail on continuous temporal streams because they treat all documents as temporally identical. As Allan et al.~\cite{allan1998} established, event detection requires chronological contextualization. Our two-phase methodology bridges classical probabilistic models (LDA) with modern neural approaches (BERTopic), proving that contextual embeddings resolve semantic conflation that bag-of-words models cannot.
 
 \vspace{-0.3cm}
 \section{Literature Review}
 \begin{enumerate}[leftmargin=*,itemsep=1pt]
-    \item \textbf{Allan et al. (1998):} Topic Detection and Tracking pilot study~\cite{allan1998} --- established event detection parameters but relied on simple word overlap without temporal modeling.
-    \item \textbf{Blei, Ng, Jordan (2003):} LDA~\cite{blei2003} revolutionized probabilistic topic modeling but is fundamentally \textit{static} --- ignores time via full exchangeability assumption.
-    \item \textbf{McInnes et al. (2018):} UMAP~\cite{mcinnes2018} preserves both local and global topological structure during dimensionality reduction via cross-entropy optimization on fuzzy simplicial sets --- unlike t-SNE which only preserves local structure.
-    \item \textbf{Reimers \& Gurevych (2019):} Sentence-BERT~\cite{reimers2019} introduced Siamese BERT networks. Standard BERT requires both sentences fed simultaneously --- finding the most similar pair in $n{=}10{,}000$ sentences requires $n(n{-}1)/2 \approx 50$ million computations (${\sim}65$ hours on V100). SBERT reduces this to 5 seconds by pre-computing fixed-size embeddings via mean pooling, while maintaining BERT-level accuracy on STS benchmarks.
-    \item \textbf{Grootendorst (2022):} BERTopic~\cite{grootendorst2022} combined SBERT + UMAP + HDBSCAN + c-TF-IDF. Its key innovation over Top2Vec is replacing centroid-based word selection with class-based TF-IDF --- a cluster need not be spherical, so c-TF-IDF captures discriminative vocabulary regardless of cluster geometry.
+    \item \textbf{Allan et al. (1998):} Topic Detection and Tracking pilot study~\cite{allan1998} - established event detection parameters but relied on simple word overlap without temporal modeling.
+    \item \textbf{Blei, Ng, Jordan (2003):} LDA~\cite{blei2003} revolutionized probabilistic topic modeling but is fundamentally \textit{static} - ignores time via full exchangeability assumption.
+    \item \textbf{McInnes et al. (2018):} UMAP~\cite{mcinnes2018} preserves both local and global topological structure during dimensionality reduction via cross-entropy optimization on fuzzy simplicial sets - unlike t-SNE which only preserves local structure.
+    \item \textbf{Reimers \& Gurevych (2019):} Sentence-BERT~\cite{reimers2019} introduced Siamese BERT networks. Standard BERT requires both sentences fed simultaneously - finding the most similar pair in $n{=}10{,}000$ sentences requires $n(n{-}1)/2 \approx 50$ million computations (${\sim}65$ hours on V100). SBERT reduces this to 5 seconds by pre-computing fixed-size embeddings via mean pooling, while maintaining BERT-level accuracy on STS benchmarks.
+    \item \textbf{Grootendorst (2022):} BERTopic~\cite{grootendorst2022} combined SBERT + UMAP + HDBSCAN + c-TF-IDF. Its key innovation over Top2Vec is replacing centroid-based word selection with class-based TF-IDF - a cluster need not be spherical, so c-TF-IDF captures discriminative vocabulary regardless of cluster geometry.
 \end{enumerate}
 Our work bridges the gap between LDA and BERTopic by explicitly engineering temporal features, providing rigorous comparative analysis, and proposing a hybrid Phase 3 architecture that addresses limitations of both phases.
 
@@ -49,12 +49,12 @@ Our work bridges the gap between LDA and BERTopic by explicitly engineering temp
 \caption{\small EDA Overview: Articles over time, top categories, word length distribution, yearly balanced sampling (11,000 articles, 1,000 per year, 2012--2022)}
 \end{figure*}
 
-The HuffPost News Category Dataset (Misra~\cite{misra2022}) contains 210,000+ articles across 42 categories spanning 2012--2022. We isolate a balanced subset of exactly 11,000 articles (1,000/year) to prevent temporal volume bias --- election years have significantly more articles, which would artificially inflate velocity metrics if uncontrolled. Mean article length: 29 words. EDA reveals political coverage grew 278\% during the 2016--2017 US election cycle --- a non-obvious pattern that validated our entire temporal tracking approach before modeling began.
+The HuffPost News Category Dataset (Misra~\cite{misra2022}) contains 210,000+ articles across 42 categories spanning 2012--2022. We isolate a balanced subset of exactly 11,000 articles (1,000/year) to prevent temporal volume bias - election years have significantly more articles, which would artificially inflate velocity metrics if uncontrolled. Mean article length: 29 words. EDA reveals political coverage grew 278\% during the 2016--2017 US election cycle - a non-obvious pattern that validated our entire temporal tracking approach before modeling began.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{eda_plots/category_velocity.png}
-\caption{\small Category Growth Velocity --- Politics spikes 278\% during 2016--2017 US election cycle}
+\caption{\small Category Growth Velocity - Politics spikes 278\% during 2016--2017 US election cycle}
 \end{figure}
 
 \vspace{-0.3cm}
@@ -65,7 +65,7 @@ The HuffPost News Category Dataset (Misra~\cite{misra2022}) contains 210,000+ ar
 \text{TF-IDF}(t,d,D) = f(t,d) \cdot \log\frac{|D|}{|\{d \in D : t \in d\}|}
 \end{equation}
 
-TF-IDF (5,000 features) identifies ``trump'' as the highest-scoring term across the entire 2012--2022 corpus, confirming political dominance but revealing TF-IDF's inability to track \textit{when} topics emerge. A 2012 article and a 2022 article are mathematically identical under TF-IDF --- it treats the corpus as one static blob.
+TF-IDF (5,000 features) identifies ``trump'' as the highest-scoring term across the entire 2012--2022 corpus, confirming political dominance but revealing TF-IDF's inability to track \textit{when} topics emerge. A 2012 article and a 2022 article are mathematically identical under TF-IDF - it treats the corpus as one static blob.
 
 \begin{figure}[H]
 \centering
@@ -83,19 +83,19 @@ TF-IDF (5,000 features) identifies ``trump'' as the highest-scoring term across 
 
 Three novel features directly address LDA's static corpus assumption:
 
-\textbf{Feature 1 --- Temporal Weight:}
+\textbf{Feature 1 - Temporal Weight:}
 \begin{equation}
 w(d) = \frac{\log(1 + \Delta t_d)}{\max_d \log(1 + \Delta t_d)}
 \end{equation}
 Logarithmic scaling prevents recent articles from completely dominating while still amplifying trend signal. Mean weight = 0.88, confirming corpus is skewed recent.
 
-\textbf{Feature 2 --- Category Velocity:}
+\textbf{Feature 2 - Category Velocity:}
 \begin{equation}
 V(c,t) = \frac{N(c,W_t) - N(c,W_{t-1})}{N(c,W_{t-1}) + \epsilon}
 \end{equation}
 Captures momentum of an article's category at publication time. Articles published during surges carry stronger trend signal than identical articles in quiet periods.
 
-\textbf{Feature 3 --- Text Richness Ratio:}
+\textbf{Feature 3 - Text Richness Ratio:}
 \begin{equation}
 R_d = \frac{|\text{Unique Words in } d|}{|W_d| + 1}
 \end{equation}
@@ -117,7 +117,7 @@ Parameters: $K{=}10$, max\_iter$=$20, batch learning, CountVectorizer max\_featu
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{model_plots/lda_topics.png}
-\caption{\small LDA Discovered Topics --- 10 topics found completely unsupervised}
+\caption{\small LDA Discovered Topics - 10 topics found completely unsupervised}
 \end{figure*}
 
 \begin{table}[H]
@@ -151,60 +151,60 @@ COVID topic detected & Yes (misplaced to 2014) \\
 \end{figure}
 
 \subsection{Phase 1 Failure Analysis}
-LDA's bag-of-words assumption conflates 2014 ACA legal news with 2020 COVID pandemic news. In 2014, Affordable Care Act court challenges produced vocabulary: \textit{state, health, court, people}. In 2020, COVID pandemic articles used the exact same vocabulary. LDA only sees word frequencies, not meaning --- identical vocabulary produces near-identical count vectors:
+LDA's bag-of-words assumption conflates 2014 ACA legal news with 2020 COVID pandemic news. In 2014, Affordable Care Act court challenges produced vocabulary: \textit{state, health, court, people}. In 2020, COVID pandemic articles used the exact same vocabulary. LDA only sees word frequencies, not meaning - identical vocabulary produces near-identical count vectors:
 \begin{equation}
 \cos(\vec{v}_{2014}^{\text{BoW}}, \vec{v}_{2020}^{\text{BoW}}) \approx 1.0
 \end{equation}
-The COVID topic therefore statistically peaks in \textbf{2014} --- five years before the pandemic. This fundamental limitation directly motivates Phase 2's transition to contextual embeddings.
+The COVID topic therefore statistically peaks in \textbf{2014} - five years before the pandemic. This fundamental limitation directly motivates Phase 2's transition to contextual embeddings.
 
 \vspace{-0.3cm}
 \section{Phase 2: BERTopic Neural Topic Modeling}
 
 \subsection{Architecture}
 
-\textbf{Stage 1 --- SBERT Embeddings (Reimers \& Gurevych, 2019):}
+\textbf{Stage 1 - SBERT Embeddings (Reimers \& Gurevych, 2019):}
 
-Standard BERT requires both sentences fed simultaneously, making pairwise similarity over $n{=}10{,}000$ sentences require $n(n{-}1)/2 \approx 50$ million computations (${\sim}65$ hours on V100 GPU). Sentence-BERT adds a Siamese network structure with mean pooling over token embeddings, reducing this to 5 seconds while maintaining accuracy~\cite{reimers2019}. Raw BERT [CLS] embeddings perform worse than GloVe for sentence similarity --- SBERT's fine-tuning on NLI data with softmax classification loss corrects this.
+Standard BERT requires both sentences fed simultaneously, making pairwise similarity over $n{=}10{,}000$ sentences require $n(n{-}1)/2 \approx 50$ million computations (${\sim}65$ hours on V100 GPU). Sentence-BERT adds a Siamese network structure with mean pooling over token embeddings, reducing this to 5 seconds while maintaining accuracy~\cite{reimers2019}. Raw BERT [CLS] embeddings perform worse than GloVe for sentence similarity - SBERT's fine-tuning on NLI data with softmax classification loss corrects this.
 
-We use \texttt{all-MiniLM-L6-v2} (22M params, 384-dim), distilled from \texttt{all-mpnet-base-v2} (110M params, 768-dim) via knowledge distillation, achieving 96.4\% of full model performance at $5\times$ faster inference --- a justified speed/accuracy trade-off for 11K short news headlines on CPU:
+We use \texttt{all-MiniLM-L6-v2} (22M params, 384-dim), distilled from \texttt{all-mpnet-base-v2} (110M params, 768-dim) via knowledge distillation, achieving 96.4\% of full model performance at $5\times$ faster inference - a justified speed/accuracy trade-off for 11K short news headlines on CPU:
 \begin{equation}
 \vec{e}_d = \text{MeanPool}(\text{BERT}_\text{MiniLM}(d)) \in \mathbb{R}^{384}
 \end{equation}
 
-\textbf{Why cosine metric in UMAP:} SBERT optimizes cosine similarity during Siamese network training. Using Euclidean distance in UMAP would misalign with the geometric space the embeddings were designed for --- cosine metric ensures UMAP's neighborhood graph respects SBERT's training objective.
+\textbf{Why cosine metric in UMAP:} SBERT optimizes cosine similarity during Siamese network training. Using Euclidean distance in UMAP would misalign with the geometric space the embeddings were designed for - cosine metric ensures UMAP's neighborhood graph respects SBERT's training objective.
 
-\textbf{Stage 2 --- UMAP Dimensionality Reduction (McInnes et al., 2018):}
+\textbf{Stage 2 - UMAP Dimensionality Reduction (McInnes et al., 2018):}
 
 UMAP reduces 384 dimensions to 5 by constructing a weighted k-neighbor graph and minimizing cross-entropy between high and low dimensional fuzzy simplicial sets:
 \begin{equation}
 C = \sum_{e \in E} \left[ w_h(e) \log\frac{w_h(e)}{w_l(e)} + (1{-}w_h(e)) \log\frac{1{-}w_h(e)}{1{-}w_l(e)} \right]
 \end{equation}
-Unlike t-SNE which only preserves local structure, UMAP preserves global topology --- critical for cluster separation. Parameters: $n\_neighbors{=}15$, $n\_components{=}5$, $min\_dist{=}0.0$, metric$=$cosine.
+Unlike t-SNE which only preserves local structure, UMAP preserves global topology - critical for cluster separation. Parameters: $n\_neighbors{=}15$, $n\_components{=}5$, $min\_dist{=}0.0$, metric$=$cosine.
 
-\textbf{Stage 3 --- HDBSCAN Clustering (Campello et al., 2013):}
+\textbf{Stage 3 - HDBSCAN Clustering (Campello et al., 2013):}
 
 HDBSCAN builds a minimum spanning tree on mutual reachability distance, converts it to a cluster hierarchy, then extracts the most persistent clusters via stability scoring. Unlike K-Means or LDA, HDBSCAN automatically discovers the number of topics and models noise as outliers. Parameters: $min\_cluster\_size{=}50$, $min\_samples{=}10$.
 
-\textbf{Stage 4 --- c-TF-IDF Topic Representation (Grootendorst, 2022):}
+\textbf{Stage 4 - c-TF-IDF Topic Representation (Grootendorst, 2022):}
 
 c-TF-IDF treats each cluster as a single pseudo-document, then applies a modified TF-IDF formula where IDF is computed across clusters, not documents:
 \begin{equation}
 W_{t,c} = \frac{tf_{t,c}}{A_c} \cdot \log\left(1 + \frac{A}{tf_t}\right)
 \end{equation}
-where $A_c$ is the average number of words per cluster (normalizes for cluster size), and $A$ is the average across all clusters. Unlike Top2Vec's centroid-based word selection, c-TF-IDF asks: \textit{what words appear frequently in this cluster but rarely in others?} A cluster need not be spherical --- c-TF-IDF captures discriminative vocabulary regardless of cluster geometry~\cite{grootendorst2022}.
+where $A_c$ is the average number of words per cluster (normalizes for cluster size), and $A$ is the average across all clusters. Unlike Top2Vec's centroid-based word selection, c-TF-IDF asks: \textit{what words appear frequently in this cluster but rarely in others?} A cluster need not be spherical - c-TF-IDF captures discriminative vocabulary regardless of cluster geometry~\cite{grootendorst2022}.
 
 \subsection{Dataset Handling and Regularization}
 
-The same balanced 11,000-article corpus from Phase 1 is used. \textbf{Text cleaning is deliberately minimal for SBERT} --- unlike LDA which benefits from aggressive stemming, SBERT was pre-trained on natural language. Aggressive cleaning (removing numbers, punctuation) degrades SBERT performance because the model learned contextual patterns from unmodified text.
+The same balanced 11,000-article corpus from Phase 1 is used. \textbf{Text cleaning is deliberately minimal for SBERT} - unlike LDA which benefits from aggressive stemming, SBERT was pre-trained on natural language. Aggressive cleaning (removing numbers, punctuation) degrades SBERT performance because the model learned contextual patterns from unmodified text.
 
-\textbf{Outlier handling as implicit regularization:} HDBSCAN assigns 43.2\% of documents as outliers (topic $= -1$). This is deliberate --- our articles average ${\sim}20$ words (headline + description). Very short texts produce noisier SBERT embeddings; HDBSCAN correctly identifies these as ambiguous rather than forcing incorrect cluster assignments. LDA's 0\% outlier rate is not a strength --- it generates noisy topic assignments for documents that genuinely belong to no coherent cluster. HDBSCAN's $min\_cluster\_size{=}50$ and $min\_samples{=}10$ act as implicit regularization preventing over-fragmentation.
+\textbf{Outlier handling as implicit regularization:} HDBSCAN assigns 43.2\% of documents as outliers (topic $= -1$). This is deliberate - our articles average ${\sim}20$ words (headline + description). Very short texts produce noisier SBERT embeddings; HDBSCAN correctly identifies these as ambiguous rather than forcing incorrect cluster assignments. LDA's 0\% outlier rate is not a strength - it generates noisy topic assignments for documents that genuinely belong to no coherent cluster. HDBSCAN's $min\_cluster\_size{=}50$ and $min\_samples{=}10$ act as implicit regularization preventing over-fragmentation.
 
 \subsection{Phase 2 Results}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{bert_plots/umap_clusters.png}
-\caption{\small UMAP 2D Topic Clusters --- each color is one BERTopic cluster}
+\caption{\small UMAP 2D Topic Clusters - each color is one BERTopic cluster}
 \end{figure}
 
 \begin{figure}[H]
@@ -234,18 +234,18 @@ Context Separation & \checkmark Verified \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{bert_plots/topics_over_time.png}
-\caption{\small Neural Temporal Tracking --- COVID spikes correctly in 2020}
+\caption{\small Neural Temporal Tracking - COVID spikes correctly in 2020}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{bert_plots/bert_semantic_velocity.png}
-\caption{\small BERTopic Semantic Velocity --- COVID peaks 1,036\% in 2020}
+\caption{\small BERTopic Semantic Velocity - COVID peaks 1,036\% in 2020}
 \end{figure}
 
 \subsection{Ablation Study: Effect of Contextual Embeddings}
 
-We perform an ablation by systematically removing contextual embeddings (Phase 1 --- LDA) and restoring them (Phase 2 --- BERTopic), isolating the contribution of SBERT:
+We perform an ablation by systematically removing contextual embeddings (Phase 1 - LDA) and restoring them (Phase 2 - BERTopic), isolating the contribution of SBERT:
 
 \begin{table}[H]
 \centering
@@ -263,32 +263,32 @@ SBERT removed (Phase 1) & 2014 \texttimes & ${\sim}$0.80 \\
 \end{tabular}
 \end{table}
 
-Removing contextual embeddings introduces a 6-year temporal error and increases semantic conflation by 0.53 cosine units. This ablation confirms that SBERT embeddings are the critical component responsible for context separation --- not UMAP or HDBSCAN in isolation. The LDA-to-BERTopic transition is therefore not merely incremental but a \textit{fundamental architectural necessity} for reliable trend detection.
+Removing contextual embeddings introduces a 6-year temporal error and increases semantic conflation by 0.53 cosine units. This ablation confirms that SBERT embeddings are the critical component responsible for context separation - not UMAP or HDBSCAN in isolation. The LDA-to-BERTopic transition is therefore not merely incremental but a \textit{fundamental architectural necessity} for reliable trend detection.
 
 \subsection{Context Separation Proof}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\columnwidth]{bert_plots/context_separation.png}
-\caption{\small ACA legal (blue) vs COVID (red) --- clearly separated in SBERT embedding space. Intra-ACA sim: 0.105, Intra-COVID sim: 0.236, Cross-group sim: 0.079}
+\caption{\small ACA legal (blue) vs COVID (red) - clearly separated in SBERT embedding space. Intra-ACA sim: 0.105, Intra-COVID sim: 0.236, Cross-group sim: 0.079}
 \end{figure}
 
 SBERT cosine similarity between ``supreme court rules on ACA health mandate'' and ``covid coronavirus pandemic spreads'' = \textbf{0.27}. In bag-of-words, these score ${\sim}$0.80. Pre-2020 health/court documents are correctly assigned to Topic 0 (general news); COVID-era documents go to Topic 3 (dedicated COVID cluster). The embedding space confirms intra-cluster similarity exceeds cross-cluster similarity, validating semantic separation.
 
 \subsection{Phase 2 Failure Analysis}
 
-\textbf{Issue 1 --- High Outlier Rate (43.2\%):} Short article texts (${\sim}$20 words) produce noisier SBERT embeddings than the longer sentences SBERT was trained on. HDBSCAN cannot form confident dense clusters from noisy embeddings. Mitigation in Phase 3: seed-guided clustering.
+\textbf{Issue 1 - High Outlier Rate (43.2\%):} Short article texts (${\sim}$20 words) produce noisier SBERT embeddings than the longer sentences SBERT was trained on. HDBSCAN cannot form confident dense clusters from noisy embeddings. Mitigation in Phase 3: seed-guided clustering.
 
-\textbf{Issue 2 --- Static Snapshot:} BERTopic is fitted once on the full corpus. Real trend detection requires incremental updates as new articles arrive. Mitigation in Phase 3: sliding window retraining.
+\textbf{Issue 2 - Static Snapshot:} BERTopic is fitted once on the full corpus. Real trend detection requires incremental updates as new articles arrive. Mitigation in Phase 3: sliding window retraining.
 
-\textbf{Issue 3 --- No External Validation:} Without human-annotated labels or an external event database, we cannot quantify false positive rate. Mitigation in Phase 3: GDELT cross-verification.
+\textbf{Issue 3 - No External Validation:} Without human-annotated labels or an external event database, we cannot quantify false positive rate. Mitigation in Phase 3: GDELT cross-verification.
 
 \vspace{-0.3cm}
 \section{Phase 3: Proposed Hybrid Architecture}
 
 Each Phase 2 failure maps directly to a Phase 3 solution. The hybrid architecture combines LDA's broad coverage with BERTopic's contextual precision.
 
-\subsection{LDA-Seeded BERTopic --- Reducing Outliers}
+\subsection{LDA-Seeded BERTopic - Reducing Outliers}
 
 Instead of fully unsupervised HDBSCAN, Phase 3 initializes BERTopic with seed topic keywords from Phase 1's LDA output. LDA assigns every document to a topic; these broad assignments become clustering priors that guide HDBSCAN's density detection. The LDA$\rightarrow$BERTopic feedback loop reduces outliers while preserving SBERT's contextual separation:
 \begin{equation}
@@ -306,7 +306,7 @@ Combined with Phase 1's category velocity feature, this enables real-time veloci
 
 \subsection{GDELT Cross-Verification}
 
-Detected velocity spikes are cross-referenced against the GDELT Project --- a real-time global event monitor tracking news across 100+ languages. Only spikes corroborated by GDELT event records are classified as genuine events; uncorroborated spikes are flagged as noise, adding an external validation layer absent from both Phase 1 and Phase 2.
+Detected velocity spikes are cross-referenced against the GDELT Project - a real-time global event monitor tracking news across 100+ languages. Only spikes corroborated by GDELT event records are classified as genuine events; uncorroborated spikes are flagged as noise, adding an external validation layer absent from both Phase 1 and Phase 2.
 
 \begin{table}[H]
 \centering
@@ -352,9 +352,9 @@ Temporal & Manual features & Native tracking \\
 \vspace{-0.3cm}
 \section{Conclusion}
 
-We demonstrated a two-phase evolution from classical to neural topic modeling for emerging trend detection. Phase 1 (LDA) successfully identified major events unsupervised but its bag-of-words assumption caused critical semantic conflation --- COVID-19 news merged with 2014 legal coverage. Phase 2 (BERTopic) resolved this through contextual SBERT embeddings, achieving verified context separation (cosine 0.27 vs BoW $\sim$0.80). Our ablation study confirms SBERT as the single component responsible for the 6-year temporal correction. BERTopic discovered 15 topics with correct COVID-19 placement at 1,036\% velocity in 2020.
+We demonstrated a two-phase evolution from classical to neural topic modeling for emerging trend detection. Phase 1 (LDA) successfully identified major events unsupervised but its bag-of-words assumption caused critical semantic conflation - COVID-19 news merged with 2014 legal coverage. Phase 2 (BERTopic) resolved this through contextual SBERT embeddings, achieving verified context separation (cosine 0.27 vs BoW $\sim$0.80). Our ablation study confirms SBERT as the single component responsible for the 6-year temporal correction. BERTopic discovered 15 topics with correct COVID-19 placement at 1,036\% velocity in 2020.
 
-Remaining limitations --- 43.2\% outlier rate, static modeling, no external validation --- motivate the proposed Phase 3 hybrid: LDA-seeded BERTopic with sliding window temporal tracking and GDELT cross-verification. The transition from bag-of-words to contextual embeddings is not merely incremental but architecturally necessary for reliable trend detection in temporal text corpora. This work realizes Blei et al.'s~\cite{blei2003} 2003 prediction that LDA would eventually be extended with temporal topic series --- two decades later.
+Remaining limitations - 43.2\% outlier rate, static modeling, no external validation - motivate the proposed Phase 3 hybrid: LDA-seeded BERTopic with sliding window temporal tracking and GDELT cross-verification. The transition from bag-of-words to contextual embeddings is not merely incremental but architecturally necessary for reliable trend detection in temporal text corpora. This work realizes Blei et al.'s~\cite{blei2003} 2003 prediction that LDA would eventually be extended with temporal topic series - two decades later.
 
 \vspace{-0.3cm}
 \begin{thebibliography}{9}
