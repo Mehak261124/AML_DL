@@ -2,6 +2,8 @@
 \usepackage[margin=1.5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{textcomp}
 \usepackage{booktabs}
 \usepackage{hyperref}
 \usepackage{cite}
@@ -106,7 +108,7 @@ p(\theta,z,w|\alpha,\beta) = \prod_{d=1}^{D} p(\theta_d|\alpha) \prod_{i=1}^{N_d
 \end{equation}
 Inference is intractable; variational EM minimizes KL divergence between the approximate posterior $q(\theta,z|\gamma,\phi)$ and the true posterior~\cite{blei2003}:
 \begin{equation}
-\mathcal{L}(\gamma,\phi;\alpha,\beta) = \mathbb{E}_q[\log p(\theta|\alpha)] + \mathbb{E}_q[\log p(z|\theta)] + \mathbb{E}_q[\log p(w|z,\beta)] - \text{KL}(q\|p)
+\mathcal{L}(\gamma,\phi;\alpha,\beta) = \mathbb{E}_q[\log p(\theta|\alpha)] + \mathbb{E}_q[\log p(z|\theta)] + \mathbb{E}_q[\log p(w|z,\beta)] - \text{KL}(q\parallel p)
 \end{equation}
 Parameters: $K{=}10$, max\_iter$=$20, batch learning, CountVectorizer max\_features$=$5,000.
 
