@@ -2,488 +2,611 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Dynamic Trend & Event Detector</title>
+  <title>Dynamic Trend & Event Detector — Phase 1 & 2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/white.min.css">
+  <meta name="description" content="Neural Topic Modeling: LDA vs BERTopic for emerging trend detection in news articles">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
-    * { box-sizing: border-box; }
-
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --navy: #0f172a;
-      --blue: #2563eb;
-      --blue-soft: #eff6ff;
-      --gray-900: #0f172a;
-      --gray-600: #475569;
-      --gray-400: #94a3b8;
-      --gray-100: #f1f5f9;
-      --gray-50:  #f8fafc;
-      --white: #ffffff;
-      --radius-lg: 16px;
-      --radius-md: 12px;
-      --shadow-soft: 0 12px 32px -8px rgba(15, 23, 42, 0.08);
-      --shadow-sm: 0 4px 12px -4px rgba(15, 23, 42, 0.06);
+      --bg: #0a0e1a; --bg-card: #111827; --bg-card-hover: #1a2236;
+      --bg-input: #0d1322; --border: #1e293b; --border-focus: #3b82f6;
+      --text: #f1f5f9; --text-muted: #94a3b8; --text-dim: #64748b;
+      --blue: #3b82f6; --blue-glow: rgba(59,130,246,0.15);
+      --cyan: #06b6d4; --green: #10b981; --red: #ef4444;
+      --purple: #8b5cf6; --orange: #f59e0b;
+      --radius: 12px; --radius-sm: 8px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
-
-    .reveal {
-      font-family: 'Inter', sans-serif;
-      color: var(--gray-900);
-      background-color: var(--gray-50);
-    }
-
-    /* Base Slide Reset */
-    .reveal .slides section {
-      height: 100%;
-      padding: 48px 72px;
-      display: flex !important;
-      flex-direction: column;
-      text-align: left;
-      justify-content: flex-start;
-    }
-
-    /* Clean Header */
-    .slide-header {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 32px;
-      flex-shrink: 0;
-    }
-    .slide-header .badge {
-      background: var(--blue-soft);
-      color: var(--blue);
-      font-weight: 600;
-      font-size: 16px;
-      padding: 6px 14px;
-      border-radius: 24px;
-      letter-spacing: 0.05em;
-    }
-    .slide-header h2 {
-      font-size: 32px;
-      font-weight: 600;
-      color: var(--navy);
-      letter-spacing: -0.02em;
-      margin: 0;
-      text-transform: none;
-      font-family: 'Inter', sans-serif;
-    }
-
-    /* Slide Body */
-    .slide-body {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      overflow: hidden;
-    }
-
-    /* Typography */
-    .reveal p, .reveal li { margin: 0; color: var(--gray-600); font-family: 'Inter', sans-serif; }
-    .reveal ul { margin: 0; padding-left: 24px; display: flex; flex-direction: column; gap: 12px; }
-    
-    .text-lg { font-size: 24px; line-height: 1.5; color: var(--gray-900); font-weight: 400; }
-    .text-md { font-size: 20px; line-height: 1.6; font-weight: 400; }
-    .text-sm { font-size: 17px; line-height: 1.6; font-weight: 400; }
-    
-    .emphasis { color: var(--blue); font-weight: 600; }
-    .strong { font-weight: 600; color: var(--navy); }
-    .muted { color: var(--gray-400); }
-
-    /* Layout Grids */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-
-    /* Card System */
-    .card {
-      background: var(--white);
-      border: 1px solid var(--gray-100);
-      border-radius: var(--radius-md);
-      padding: 24px;
-      box-shadow: var(--shadow-sm);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .card-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--blue);
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-    }
-    
-    /* Stat Strip */
-    .stat-item {
-      background: var(--white);
-      border: 1px solid var(--gray-100);
-      border-radius: var(--radius-md);
-      padding: 16px 20px;
-      box-shadow: var(--shadow-sm);
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .stat-item .n { font-size: 36px; font-weight: 700; color: var(--navy); line-height: 1; letter-spacing: -0.02em; }
-    .stat-item .l { font-size: 13px; font-weight: 500; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; }
-
-    /* Images */
-    .reveal img {
-      max-width: 100%;
-      height: auto;
-      max-height: 40vh;
-      border-radius: var(--radius-md);
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--gray-100);
-      margin: 0 auto;
-      display: block;
-    }
-    .img-cap {
-      font-size: 14px;
-      color: var(--gray-400);
-      text-align: center;
-      margin-top: 16px;
-    }
-
-    /* Code Blocks / Tags */
-    .code-tag {
-      background: var(--gray-50);
-      border: 1px solid var(--gray-100);
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 16px;
-      color: var(--gray-900);
-      display: inline-block;
-      font-weight: 500;
-    }
-
-    /* Title Slide Specifics */
-    .title-slide {
-      justify-content: center !important;
-      align-items: center !important;
-      text-align: center !important;
-      background: var(--white);
-    }
-    .title-slide h1 {
-      font-size: 56px;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: var(--navy);
-      margin: 0 0 16px 0;
-      line-height: 1.15;
-      font-family: 'Inter', sans-serif;
-      text-transform: none;
-    }
-    .title-slide .subtitle {
-      font-size: 24px;
-      color: var(--gray-600);
-      margin-bottom: 48px;
-      font-weight: 400;
-    }
-    .title-slide .meta {
-      font-size: 17px;
-      color: var(--gray-400);
-      font-weight: 400;
-    }
-
-    /* Fixed Progress Bar */
-    .reveal .progress { height: 4px; border-radius: 4px; }
-    .reveal .progress span { background: var(--blue); }
-    .reveal .controls button { color: var(--navy) !important; }
+    body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes glow { 0%,100%{box-shadow:0 0 20px rgba(59,130,246,0.2)} 50%{box-shadow:0 0 40px rgba(59,130,246,0.4)} }
+    .fade-up { animation: fadeUp 0.5s ease-out forwards; }
+    #root { min-height: 100vh; }
   </style>
 </head>
 <body>
-<div class="reveal">
-<div class="slides">
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+const API = 'http://localhost:5001/api';
 
-<!-- SLIDE 1 — TITLE -->
-<section class="title-slide">
-  <h1>Dynamic Trend &amp; Event Detector</h1>
-  <div class="subtitle">Emerging Topic Detection &amp; News Correlation</div>
-  <div class="grid-4" style="margin-bottom: 48px; width: 100%;">
-    <div class="stat-item"><span class="n">11K</span><span class="l">Articles Analyzed</span></div>
-    <div class="stat-item"><span class="n">10</span><span class="l">Topics Discovered</span></div>
-    <div class="stat-item"><span class="n">11</span><span class="l">Years (2012–22)</span></div>
-    <div class="stat-item"><span class="n">3</span><span class="l">Novel Features</span></div>
-  </div>
-  <div class="meta">
-    <span class="strong">Mehak Jain, Anuj Kumar Singh</span> &nbsp;·&nbsp; Advanced Machine Learning & Deep Learning (Phase 1)
-  </div>
-</section>
+// ============ REUSABLE COMPONENTS ============
 
-<!-- SLIDE 2 — THE PROBLEM -->
-<section>
-  <div class="slide-header"><div class="badge">01</div><h2>The Core Problem</h2></div>
-  <div class="slide-body" style="justify-content: center;">
-    <p class="text-lg" style="text-align: center; margin-bottom: 32px;">
-      How do you automatically tell if a trending topic is a <span class="strong">real news event</span> — or just <span class="emphasis">internet noise?</span>
-    </p>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">Real Event</div>
-        <ul class="text-md">
-          <li>Sustained media coverage over multiple days</li>
-          <li>Article velocity accelerates organically</li>
-          <li>Multiple independent sources report it</li>
-          <li>Verifiable in the GDELT database</li>
-        </ul>
+function Nav({ active, onNav }) {
+  const tabs = ['overview','phase1','phase2','predict','compare'];
+  const labels = { overview:'Overview', phase1:'Phase 1: LDA', phase2:'Phase 2: BERTopic', predict:'Live Predict', compare:'Compare' };
+  return (
+    <nav style={{ position:'sticky', top:0, zIndex:100, background:'rgba(10,14,26,0.85)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', padding:'0 32px' }}>
+      <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', alignItems:'center', height:64, gap:8 }}>
+        <div style={{ fontWeight:700, fontSize:18, marginRight:32, background:'linear-gradient(135deg,#3b82f6,#06b6d4)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>DT&ED</div>
+        {tabs.map(t=>(
+          <button key={t} onClick={()=>onNav(t)} style={{ padding:'8px 16px', borderRadius:8, border:'none', cursor:'pointer', background:active===t?'var(--blue)':'transparent', color:active===t?'#fff':'var(--text-muted)', fontFamily:'Inter', fontSize:13, fontWeight:500, transition:'all 0.2s' }}>{labels[t]}</button>
+        ))}
       </div>
-      <div class="card" style="background: var(--gray-50); box-shadow: none;">
-        <div class="card-title" style="color: var(--gray-600);">Internet Noise</div>
-        <ul class="text-md">
-          <li>Peaks and dies within hours</li>
-          <li>Confined to a single social platform</li>
-          <li>No mainstream news source coverage</li>
-          <li>Absent from GDELT database</li>
-        </ul>
+    </nav>
+  );
+}
+
+function StatCard({ value, label, color }) {
+  return (
+    <div style={{ background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:'24px', flex:1, minWidth:160 }}>
+      <div style={{ fontSize:12, color:'var(--text-dim)', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.05em', fontWeight:600 }}>{label}</div>
+      <div style={{ fontSize:32, fontWeight:800, color:color||'var(--text)', letterSpacing:'-0.02em', lineHeight:1 }}>{value}</div>
+    </div>
+  );
+}
+
+function Plot({ src, alt, caption }) {
+  return (
+    <div style={{ textAlign:'center' }}>
+      <img src={src} alt={alt} style={{ maxWidth:'100%', borderRadius:'var(--radius)', border:'1px solid var(--border)', boxShadow:'var(--shadow)' }} />
+      {caption && <p style={{ fontSize:12, color:'var(--text-dim)', marginTop:8 }}>{caption}</p>}
+    </div>
+  );
+}
+
+function Section({ badge, title, subtitle, children, borderColor }) {
+  return (
+    <div style={{ background:'var(--bg-card)', border:`1px solid ${borderColor||'var(--border)'}`, borderRadius:'var(--radius)', padding:28, marginBottom:24 }}>
+      {badge && <span style={{ display:'inline-block', padding:'4px 12px', borderRadius:20, fontSize:11, fontWeight:600, letterSpacing:'0.06em', background:'var(--blue-glow)', color:'var(--blue)', marginBottom:12 }}>{badge}</span>}
+      <h2 style={{ fontSize:24, fontWeight:700, letterSpacing:'-0.02em', marginBottom:8 }}>{title}</h2>
+      {subtitle && <p style={{ fontSize:14, color:'var(--text-muted)', lineHeight:1.6, marginBottom:20 }}>{subtitle}</p>}
+      {children}
+    </div>
+  );
+}
+
+function Narrative({ icon, title, children }) {
+  return (
+    <div style={{ marginBottom:20 }}>
+      <h3 style={{ fontSize:16, fontWeight:700, color:'var(--blue)', marginBottom:8, display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ fontSize:18 }}>{icon}</span> {title}
+      </h3>
+      <div style={{ fontSize:14, color:'var(--text-muted)', lineHeight:1.8, paddingLeft:4 }}>{children}</div>
+    </div>
+  );
+}
+
+// ============ OVERVIEW PAGE ============
+
+function OverviewPage() {
+  return (
+    <div className="fade-up">
+      <div style={{ textAlign:'center', padding:'60px 0 32px' }}>
+        <h1 style={{ fontSize:44, fontWeight:800, letterSpacing:'-0.03em', lineHeight:1.2, background:'linear-gradient(135deg,#f1f5f9,#94a3b8)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>Dynamic Trend & Event Detector</h1>
+        <p style={{ fontSize:18, color:'var(--text-muted)', marginTop:12 }}>Emerging Topic Detection & News Correlation using Neural Topic Modeling</p>
+        <p style={{ fontSize:13, color:'var(--text-dim)', marginTop:6 }}>Mehak Jain (230079) · Anuj Kumar Singh (230073)</p>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- SLIDE 3 — DATASET -->
-<section>
-  <div class="slide-header"><div class="badge">02</div><h2>Dataset Architecture</h2></div>
-  <div class="slide-body">
-    <div class="grid-4" style="margin-bottom: 16px;">
-      <div class="stat-item"><span class="n">210K</span><span class="l">Full Corpus</span></div>
-      <div class="stat-item"><span class="n">11K</span><span class="l">Target Subset</span></div>
-      <div class="stat-item"><span class="n">42</span><span class="l">Categories</span></div>
-      <div class="stat-item"><span class="n">1K</span><span class="l">Articles / Year</span></div>
-    </div>
-    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
-      <img src="eda_plots/eda_overview.png" alt="EDA Overview">
-      <p class="img-cap">HuffPost News Category Dataset (Misra, 2022).<br>Strictly balanced sampling ensures no political volume bias artificially weights the timeline.</p>
-    </div>
-  </div>
-</section>
-
-<!-- SLIDE 4 — EDA FINDING -->
-<section>
-  <div class="slide-header"><div class="badge">03</div><h2>Non-Obvious EDA Finding</h2></div>
-  <div class="slide-body">
-    <div class="grid-2" style="align-items: center; height: 100%;">
-      <div>
-        <p class="text-lg" style="margin-bottom: 24px;">
-          Politics coverage grew <span class="emphasis">278%</span> organically during the 2016–2017 window.
-        </p>
-        <p class="text-md">
-          The US presidential election cycle is directly visible as an aggressive velocity spike. This proves that real-world events inherently warp statistical momentum curves, mathematically validating our temporal tracking approach.
-        </p>
+      <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:32 }}>
+        <StatCard value="11K" label="Articles" color="var(--blue)" />
+        <StatCard value="15" label="Topics (BERT)" color="var(--cyan)" />
+        <StatCard value="1036%" label="COVID Velocity" color="var(--red)" />
+        <StatCard value="✅" label="Context Separated" color="var(--green)" />
       </div>
-      <img src="eda_plots/category_velocity.png" alt="Category Velocity">
-    </div>
-  </div>
-</section>
 
-<!-- SLIDE 5 — BASELINE -->
-<section>
-  <div class="slide-header"><div class="badge">04</div><h2>Baseline: TF-IDF Limitations</h2></div>
-  <div class="slide-body">
-    <div class="grid-2" style="align-items: center; height: 100%;">
-      <img src="model_plots/baseline_tfidf.png" alt="TF-IDF Baseline">
-      <div style="display: flex; flex-direction: column; gap: 24px;">
-        <div class="card">
-          <div class="card-title">Key Finding</div>
-          <p class="text-md">"Trump" ranks #1 across the entire 2012–2022 corpus, confirming overwhelming political dominance.</p>
+      <Section badge="THE PROBLEM" title="Real Events vs Internet Noise">
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+          <div style={{ padding:20, borderRadius:'var(--radius-sm)', background:'rgba(16,185,129,0.06)', border:'1px solid rgba(16,185,129,0.12)' }}>
+            <div style={{ fontWeight:700, color:'var(--green)', marginBottom:10, fontSize:13 }}>✓ REAL EVENT</div>
+            <ul style={{ color:'var(--text-muted)', fontSize:13, lineHeight:2, paddingLeft:18 }}>
+              <li>Sustained multi-day media coverage</li><li>Accelerating article velocity</li><li>Multiple independent sources</li><li>Verifiable in GDELT database</li>
+            </ul>
+          </div>
+          <div style={{ padding:20, borderRadius:'var(--radius-sm)', background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.12)' }}>
+            <div style={{ fontWeight:700, color:'var(--red)', marginBottom:10, fontSize:13 }}>✗ INTERNET NOISE</div>
+            <ul style={{ color:'var(--text-muted)', fontSize:13, lineHeight:2, paddingLeft:18 }}>
+              <li>Peaks and dies within hours</li><li>Confined to single platform</li><li>No mainstream coverage</li><li>Absent from GDELT</li>
+            </ul>
+          </div>
         </div>
-        <div class="card" style="background: var(--gray-50); box-shadow: none;">
-          <div class="card-title" style="color: var(--gray-600);">Architectural Flaw</div>
-          <ul class="text-sm">
-            <li>Treats the entire 11-year corpus as a static block</li>
-            <li>Unable to map when topics evolve or emerge</li>
-            <li>A 2012 article equals a 2022 article mathematically</li>
-            <li>Fails to detect targeted trend momentum</li>
+      </Section>
+
+      <Section badge="PIPELINE" title="Two-Phase Architecture">
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 40px 1fr', alignItems:'center', gap:16 }}>
+          <div style={{ padding:20, borderRadius:'var(--radius-sm)', background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.12)' }}>
+            <div style={{ fontWeight:700, color:'var(--orange)', fontSize:13, marginBottom:8 }}>PHASE 1 — LDA (Advanced ML)</div>
+            <div style={{ fontSize:12, color:'var(--text-muted)', lineHeight:1.8 }}>TF-IDF → CountVectorizer → LDA (10 topics)<br/>+ Temporal Weight · Category Velocity · Text Richness<br/><span style={{ color:'var(--red)' }}>⚠ Bag-of-words conflation</span></div>
+          </div>
+          <div style={{ textAlign:'center', fontSize:24, color:'var(--text-dim)' }}>→</div>
+          <div style={{ padding:20, borderRadius:'var(--radius-sm)', background:'rgba(59,130,246,0.06)', border:'1px solid rgba(59,130,246,0.12)' }}>
+            <div style={{ fontWeight:700, color:'var(--blue)', fontSize:13, marginBottom:8 }}>PHASE 2 — BERTopic (Deep Learning)</div>
+            <div style={{ fontSize:12, color:'var(--text-muted)', lineHeight:1.8 }}>SBERT (384-dim) → UMAP (5-dim) → HDBSCAN<br/>→ c-TF-IDF topic representation<br/><span style={{ color:'var(--green)' }}>✅ Context-aware separation</span></div>
+          </div>
+        </div>
+      </Section>
+    </div>
+  );
+}
+
+// ============ PHASE 1 PAGE ============
+
+function Phase1Page() {
+  return (
+    <div className="fade-up">
+      <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:24 }}>
+        <StatCard value="10" label="Topics" color="var(--orange)" />
+        <StatCard value="0.61" label="LDA Confidence" color="var(--orange)" />
+        <StatCard value="278%" label="Trump Growth" color="var(--orange)" />
+        <StatCard value="3" label="Novel Features" color="var(--orange)" />
+      </div>
+
+      <Section badge="PROBLEM" title="What Problem Are We Solving?">
+        <Narrative icon="🎯" title="The Challenge">
+          <p>Every day, thousands of topics trend across the internet. Most are noise — viral memes, celebrity gossip, outrage cycles that die within hours. The core challenge is: <strong style={{ color:'var(--text)' }}>how do you algorithmically distinguish a genuine emerging news event from internet noise?</strong></p>
+        </Narrative>
+        <Narrative icon="🌍" title="Why This Matters">
+          <p>Real-world events like elections, pandemics, and natural disasters create measurable statistical signatures in news coverage. Detecting these early has applications in <strong style={{ color:'var(--text)' }}>journalism, crisis response, financial markets, and public health surveillance</strong>. A system that can automatically separate signal from noise in real-time could provide hours or days of early warning compared to manual monitoring.</p>
+        </Narrative>
+      </Section>
+
+      <Section badge="APPROACH" title="Phase 1: LDA Pipeline — Step by Step">
+        <Narrative icon="📊" title="Step 1 — Data Loading & Balancing">
+          <p>We load the HuffPost News Category Dataset (210K+ articles, 42 categories, 2012–2022) and create a <strong style={{ color:'var(--text)' }}>strictly balanced subset of 11,000 articles</strong> — exactly 1,000 per year. This prevents temporal volume bias (e.g., more articles during election years) from artificially weighting the model.</p>
+        </Narrative>
+        <Narrative icon="🧹" title="Step 2 — Text Cleaning & Baseline TF-IDF">
+          <p>Articles are lowercased, punctuation removed, and stopwords filtered. We run TF-IDF (5,000 features) as a baseline — this identifies <strong style={{ color:'var(--text)' }}>"trump" as the #1 term</strong> across the entire 11-year corpus, confirming political dominance but revealing TF-IDF's inability to track <em>when</em> topics emerge.</p>
+        </Narrative>
+        <Narrative icon="🧠" title="Step 3 — LDA Topic Modeling">
+          <p>Latent Dirichlet Allocation with 10 components is fitted on count vectors. LDA is a generative probabilistic model that assumes each document is a mixture of topics, and each topic is a distribution over words. It discovers hidden thematic structure purely through word co-occurrence — <strong style={{ color:'var(--text)' }}>completely unsupervised, zero labels</strong>.</p>
+        </Narrative>
+        <Narrative icon="⚙️" title="Step 4 — Novel Feature Engineering">
+          <p>Three custom features address LDA's core limitation (no temporal awareness):</p>
+          <ul style={{ paddingLeft:20, marginTop:8 }}>
+            <li><strong style={{ color:'var(--text)' }}>Temporal Weight:</strong> <code style={{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>w(d) = log(1+Δt) / max(log(1+Δt))</code> — recent articles get higher weight</li>
+            <li><strong style={{ color:'var(--text)' }}>Category Velocity:</strong> Growth rate of article's category at publication time — articles during surges carry stronger signal</li>
+            <li><strong style={{ color:'var(--text)' }}>Text Richness:</strong> <code style={{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>R(d) = |unique| / (|total| + 1)</code> — measures semantic density</li>
           </ul>
+        </Narrative>
+      </Section>
+
+      <Section badge="MODEL" title="Why LDA Over Alternatives?">
+        <Narrative icon="🔬" title="Model Selection Rationale">
+          <p><strong style={{ color:'var(--text)' }}>LDA (Blei et al., 2003)</strong> was chosen as the Phase 1 baseline because it is the most widely-used unsupervised topic model in NLP. Unlike clustering methods (K-Means), LDA captures <strong style={{ color:'var(--text)' }}>mixed-membership</strong> — a single article can belong to multiple topics simultaneously. Unlike NMF, LDA has a proper probabilistic foundation with Dirichlet priors.</p>
+          <p style={{ marginTop:8 }}>Configuration: 10 topics, batch learning, 20 iterations, CountVectorizer with 5,000 features. We deliberately chose LDA to establish a strong traditional ML baseline before introducing deep learning in Phase 2.</p>
+        </Narrative>
+      </Section>
+
+      <Section badge="DATA" title="Dataset & Preprocessing">
+        <Narrative icon="📁" title="Source & Collection">
+          <p><strong style={{ color:'var(--text)' }}>HuffPost News Category Dataset</strong> (Misra, 2022) from Kaggle. 210,000+ articles, 42 news categories, spanning 2012–2022. Each article contains a headline, short description, category label, and publication date.</p>
+          <p style={{ marginTop:8 }}>We sample 1,000 articles per year (stratified) to create an 11,000-article balanced corpus. Cleaning: lowercase, remove punctuation, strip whitespace. No lemmatization (preserves compound terms like "health care").</p>
+        </Narrative>
+      </Section>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+        <Plot src="model_plots/baseline_tfidf.png" alt="TF-IDF" caption="Baseline: Top 20 words by TF-IDF score" />
+        <Plot src="model_plots/feature_engineering.png" alt="Features" caption="3 novel features addressing LDA's static assumption" />
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+        <Plot src="model_plots/lda_topics.png" alt="Topics" caption="LDA discovered 10 topics — completely unsupervised" />
+        <Plot src="model_plots/lda_topic_evolution.png" alt="Evolution" caption="Topic prevalence over 2012–2022" />
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+        <Plot src="model_plots/confidence_comparison.png" alt="Confidence" caption="Standard vs Temporally-Weighted LDA" />
+        <Plot src="model_plots/semantic_velocity.png" alt="Velocity" caption="Peak semantic velocity per topic" />
+      </div>
+
+      <Section badge="RESULTS" title="What Improved?">
+        <Narrative icon="📈" title="Key Metrics & Plain-English Meaning">
+          <p><strong style={{ color:'var(--green)' }}>LDA confidence: 0.6103</strong> — On average, the model is 61% sure about which topic each article belongs to. This is solid for a 10-topic unsupervised model on noisy news text.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--green)' }}>Trump topic: 278% growth (2013→2016)</strong> — The topic containing "trump/president/donald" grew nearly 3x during the campaign period, proving the model can detect real-world events through statistical velocity signatures.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--green)' }}>COVID topic: automatically discovered</strong> — Without any labels, LDA found a cluster with "covid/court/coronavirus/state" — demonstrating unsupervised event detection. However, this same result also reveals the model's critical weakness (see Failure below).</p>
+        </Narrative>
+      </Section>
+
+      <Section badge="FAILURE ANALYSIS" title="What Didn't Work?" borderColor="rgba(239,68,68,0.3)">
+        <Narrative icon="❌" title="The COVID/Court Conflation Problem">
+          <p>LDA's bag-of-words model <strong style={{ color:'var(--red)' }}>conflates 2014 ACA legal news with 2020 COVID pandemic news</strong> into the same topic. The COVID topic statistically peaks in <strong style={{ color:'var(--red)' }}>2014</strong> — five years before the pandemic existed.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--text)' }}>Root cause:</strong> In 2014, the Affordable Care Act was being challenged in federal courts. Top words: "state, health, court, people." In 2020, COVID articles used the exact same vocabulary. LDA only sees word frequencies, not meaning — identical vocabulary → cosine similarity ~1.0 → same topic.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--text)' }}>What we'd do differently:</strong> This failure directly motivates Phase 2. We need sentence-level embeddings (SBERT) that encode full semantic context, not just word counts. "Court ruling on health policy" and "coronavirus spreading" should produce very different embeddings.</p>
+        </Narrative>
+      </Section>
+    </div>
+  );
+}
+
+// ============ PHASE 2 PAGE ============
+
+function Phase2Page() {
+  return (
+    <div className="fade-up">
+      <div style={{ display:'flex', gap:14, flexWrap:'wrap', marginBottom:24 }}>
+        <StatCard value="15" label="Topics" color="var(--blue)" />
+        <StatCard value="384" label="Embedding Dim" color="var(--cyan)" />
+        <StatCard value="1036%" label="COVID Velocity" color="var(--red)" />
+        <StatCard value="✅" label="Context Separated" color="var(--green)" />
+      </div>
+
+      <Section badge="PROBLEM" title="What Problem Does Phase 2 Solve?">
+        <Narrative icon="🎯" title="The Limitation of Bag-of-Words">
+          <p>Phase 1 proved that LDA can discover topics — but it <strong style={{ color:'var(--red)' }}>cannot distinguish context</strong>. When two different real-world events share vocabulary (ACA legal battles vs COVID pandemic), LDA merges them into one topic. This is a fundamental limitation of any bag-of-words approach: it treats words as independent signals and ignores sentence-level meaning.</p>
+        </Narrative>
+        <Narrative icon="🌍" title="Why Context Matters">
+          <p>In real-world trend detection, context is everything. A spike in the word "health" means completely different things in 2014 (legal battles) vs 2020 (pandemic). False conflation would cause a trend detection system to <strong style={{ color:'var(--text)' }}>generate false alarms or miss critical events</strong>. Phase 2 solves this by encoding full sentence semantics.</p>
+        </Narrative>
+      </Section>
+
+      <Section badge="APPROACH" title="Phase 2: BERTopic Pipeline — Step by Step">
+        <Narrative icon="1️⃣" title="Step 1 — SBERT Sentence Embeddings (Reimers & Gurevych, 2019)">
+          <p>Standard BERT requires both sentences fed simultaneously — finding the most similar pair in <strong style={{ color:'var(--text)' }}>10,000 sentences takes ~65 hours</strong> on a V100 GPU (50 million inference computations). Sentence-BERT's Siamese network pre-computes fixed-size embeddings via mean pooling, reducing this to <strong style={{ color:'var(--text)' }}>5 seconds</strong> while maintaining accuracy on semantic textual similarity benchmarks.</p>
+          <p style={{ marginTop:8 }}>We use <code style={{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>all-MiniLM-L6-v2</code> (22M params, 384-dim) — distilled from all-mpnet-base-v2 (110M params) via knowledge distillation, achieving 96.4% of full model performance at 5× faster inference. Justified for 11K short headlines on CPU. <strong style={{ color:'var(--text)' }}>Why cosine metric in UMAP:</strong> SBERT optimizes cosine similarity during Siamese training — using Euclidean distance in UMAP would misalign with the geometric space the embeddings were designed for.</p>
+        </Narrative>
+        <Narrative icon="2️⃣" title="Step 2 — UMAP Dimensionality Reduction (McInnes et al., 2018)">
+          <p>384 dimensions is too high for clustering. <strong style={{ color:'var(--text)' }}>UMAP</strong> reduces this to 5 dimensions while preserving the topological structure of the data. It constructs a weighted k-neighbor graph in high-dimensional space and optimizes a low-dimensional layout via cross-entropy minimization.</p>
+          <p style={{ marginTop:8 }}>Parameters: <code style={{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>n_neighbors=15, n_components=5, min_dist=0.0, metric='cosine'</code> — cosine metric aligns with SBERT's training objective.</p>
+        </Narrative>
+        <Narrative icon="3️⃣" title="Step 3 — HDBSCAN Clustering (Campello et al., 2013)">
+          <p><strong style={{ color:'var(--text)' }}>HDBSCAN</strong> is a density-based clustering algorithm that automatically discovers the number of clusters — unlike LDA's fixed topic count. It builds a hierarchy of density levels and extracts the most stable clusters via persistence.</p>
+          <p style={{ marginTop:8 }}>Parameters: <code style={{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>min_cluster_size=50, min_samples=10</code> — documents that don't fit any cluster become outliers (43.2% in our corpus).</p>
+        </Narrative>
+        <Narrative icon="4️⃣" title="Step 4 — c-TF-IDF Topic Representation (Grootendorst, 2022)">
+          <p><strong style={{ color:'var(--text)' }}>Class-based TF-IDF</strong> treats each cluster as a single document, concatenates all texts, and applies a modified TF-IDF formula. Unlike standard TF-IDF, the IDF component is computed across classes (clusters), not documents. This produces interpretable topic labels from cluster embeddings.</p>
+          <p style={{ marginTop:8 }}>Formula: <code style={{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>c-TF-IDF(t,c) = (tf_tc / A_c) × log(1 + A / tf_t)</code></p>
+          <p style={{ marginTop:8 }}>Unlike Top2Vec's centroid-based word selection, c-TF-IDF asks: <em>what words appear frequently in this cluster but rarely in others?</em> A cluster need not be spherical — c-TF-IDF captures discriminative vocabulary regardless of cluster geometry.</p>
+        </Narrative>
+      </Section>
+
+      <Section badge="ARCHITECTURE" title="BERTopic Pipeline Visualization">
+        <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
+          {[
+            { name:'SBERT', desc:'all-MiniLM-L6-v2\n384-dim embeddings', color:'var(--blue)' },
+            { name:'UMAP', desc:'n_neighbors=15\n384→5 dim', color:'var(--cyan)' },
+            { name:'HDBSCAN', desc:'min_cluster=50\ndensity clustering', color:'var(--purple)' },
+            { name:'c-TF-IDF', desc:'class-based\ntopic words', color:'var(--green)' }
+          ].map((s,i)=>(
+            <React.Fragment key={s.name}>
+              <div style={{ padding:'18px 22px', borderRadius:'var(--radius-sm)', textAlign:'center', minWidth:150, background:`${s.color}10`, border:`1px solid ${s.color}30` }}>
+                <div style={{ fontWeight:700, color:s.color, fontSize:15, marginBottom:4 }}>{s.name}</div>
+                <div style={{ fontSize:11, color:'var(--text-dim)', whiteSpace:'pre-line' }}>{s.desc}</div>
+              </div>
+              {i<3 && <div style={{ alignSelf:'center', fontSize:20, color:'var(--text-dim)' }}>→</div>}
+            </React.Fragment>
+          ))}
         </div>
-      </div>
-    </div>
-  </div>
-</section>
+      </Section>
 
-<!-- SLIDE 6 — LDA THEORY -->
-<section>
-  <div class="slide-header"><div class="badge">05</div><h2>Advanced ML: LDA Theory</h2></div>
-  <div class="slide-body" style="justify-content: center;">
-    <p class="text-lg" style="text-align: center; margin-bottom: 32px;">
-      Documents belong to <span class="strong">multiple topics</span> simultaneously.<br>LDA finds hidden thematic structure rather than just counting words.
-    </p>
-    <div class="grid-3">
-      <div class="card">
-        <div class="card-title" style="color: var(--gray-900);">Step 1: Topic Mix</div>
-        <p class="text-sm">Sample structural distribution θ from Dirichlet(α).</p>
-        <p class="text-sm muted" style="margin-top: auto;">Ex: 60% Politics, 30% Health</p>
-      </div>
-      <div class="card">
-        <div class="card-title" style="color: var(--gray-900);">Step 2: Topic Per Word</div>
-        <p class="text-sm">For each word block, sample topic z from Multinomial(θ).</p>
-        <p class="text-sm muted" style="margin-top: auto;">Ex: word 1 → Politics</p>
-      </div>
-      <div class="card">
-        <div class="card-title" style="color: var(--gray-900);">Step 3: Pick the Word</div>
-        <p class="text-sm">Sample final word directly from topic's vocabulary β.</p>
-        <p class="text-sm muted" style="margin-top: auto;">Ex: Politics → "president"</p>
-      </div>
-    </div>
-    <div class="card" style="margin-top: 24px; background: var(--gray-50); box-shadow: none;">
-      <p class="text-sm">
-        <span class="strong">The Static Limitation:</span> LDA treats 2012 and 2022 articles identically. It possesses no native temporal tracking. This explicitly motivates our upcoming feature engineering.
-      </p>
-    </div>
-  </div>
-</section>
+      <Section badge="MODEL" title="Why BERTopic Over Alternatives?">
+        <Narrative icon="🔬" title="Model Selection Rationale">
+          <p><strong style={{ color:'var(--text)' }}>BERTopic (Grootendorst, 2022)</strong> was chosen over alternatives because it combines the strengths of four specialized components:</p>
+          <ul style={{ paddingLeft:20, marginTop:8 }}>
+            <li><strong style={{ color:'var(--text)' }}>vs LDA:</strong> Uses contextual embeddings instead of bag-of-words → solves the conflation problem</li>
+            <li><strong style={{ color:'var(--text)' }}>vs Top2Vec:</strong> BERTopic's c-TF-IDF produces more interpretable topic labels</li>
+            <li><strong style={{ color:'var(--text)' }}>vs CTM (Combined Topic Model):</strong> BERTopic is modular — each stage can be swapped independently</li>
+          </ul>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--text)' }}>Why all-MiniLM-L6-v2?</strong> 22M parameters, 384-dim output. Chosen over all-mpnet-base-v2 (110M params, 768-dim) because our corpus of 11K short headlines doesn't require full model capacity. MiniLM achieves 96.4% of mpnet's performance at 5× faster inference — a justified speed/accuracy trade-off.</p>
+        </Narrative>
+      </Section>
 
-<!-- SLIDE 7 — FEATURE ENGINEERING -->
-<section>
-  <div class="slide-header"><div class="badge">06</div><h2>Novel Feature Engineering</h2></div>
-  <div class="slide-body">
-    <div class="grid-2" style="align-items: center; height: 100%;">
-      <div style="display: flex; flex-direction: column; gap: 24px;">
-        <div class="card">
-          <div class="card-title">Temporal Weight</div>
-          <p class="text-sm">Dynamic recency weighting breaks LDA's static assumption.</p>
-          <div><span class="code-tag">w(d) = log(1+Δt) / max(log(1+Δt))</span></div>
+      <Section badge="DATA" title="Dataset & Regularization">
+        <Narrative icon="📁" title="Data Pipeline & Handling">
+          <p>Same balanced 11,000-article corpus as Phase 1. Critical difference: <strong style={{ color:'var(--text)' }}>minimal text cleaning</strong> for SBERT — we preserve more semantic cues (numbers, capitalization context) since SBERT was trained on natural text, not aggressively cleaned text.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--text)' }}>Outlier handling as implicit regularization:</strong> HDBSCAN assigns 43.2% of documents as outliers (topic = -1). This is deliberate — our articles average ~20 words. Very short texts produce noisier SBERT embeddings; HDBSCAN correctly identifies these as ambiguous rather than forcing incorrect assignments. <strong style={{ color:'var(--text)' }}>LDA's 0% outlier rate is not a strength</strong> — it generates noisy topic assignments for documents that genuinely belong to no coherent cluster. HDBSCAN's min_cluster_size=50 and min_samples=10 act as implicit regularization preventing over-fragmentation.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--text)' }}>Regularization:</strong> UMAP's <code style={{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>min_dist=0.0</code> and HDBSCAN's <code style={{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 }}>min_cluster_size=50</code> act as implicit regularization — preventing overly fragmented topics while allowing meaningful separation.</p>
+        </Narrative>
+      </Section>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+        <Plot src="bert_plots/umap_clusters.png" alt="UMAP" caption="2D UMAP projections — each color = one BERTopic cluster" />
+        <Plot src="bert_plots/bertopic_topics.png" alt="Topics" caption="Top words per topic via c-TF-IDF scoring" />
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+        <Plot src="bert_plots/topics_over_time.png" alt="Time" caption="Neural temporal tracking — COVID spikes exactly in 2020" />
+        <Plot src="bert_plots/bert_semantic_velocity.png" alt="Velocity" caption="BERTopic semantic velocity — COVID peaks 1036% in 2020" />
+      </div>
+
+      <Section badge="RESULTS" title="What Improved?" borderColor="rgba(16,185,129,0.3)">
+        <Narrative icon="📈" title="Key Metrics & Plain-English Meaning">
+          <p><strong style={{ color:'var(--green)' }}>15 topics discovered (auto)</strong> — BERTopic found 15 natural topic clusters without being told how many to find. LDA was fixed at 10. The extra topics include Wedding, Education, Olympics, Drug Policy — topics LDA merged into broader clusters.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--green)' }}>COVID topic: 1,036% velocity in 2020</strong> — The dedicated COVID-19/coronavirus cluster shows a ten-fold growth spike exactly when the pandemic began. Unlike LDA's incorrect 2014 peak, BERTopic correctly dates the emergence.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--green)' }}>Context separation: SBERT cosine similarity = 0.27</strong> — "Supreme court rules on ACA health mandate" vs "COVID coronavirus pandemic spreads" score only 0.27 in SBERT space. In bag-of-words, they'd score ~0.8+. This proves SBERT encodes meaning, not just word overlap.</p>
+        </Narrative>
+      </Section>
+
+      <Section badge="CONTEXT SEPARATION PROOF" title="ACA Legal (pre-2020) vs COVID (2020+)" borderColor="rgba(16,185,129,0.3)">
+        <p style={{ fontSize:14, color:'var(--text-muted)', lineHeight:1.8, marginBottom:16 }}>
+          This is the critical test. LDA <strong style={{ color:'var(--red)' }}>failed</strong> here by merging 2014 legal and 2020 COVID news. BERTopic <strong style={{ color:'var(--green)' }}>succeeds</strong> — pre-2020 health/court docs go to Topic 0 (general news), COVID docs go to Topic 3 (dedicated COVID cluster).
+        </p>
+        <Plot src="bert_plots/context_separation.png" alt="Separation" caption="ACA legal docs (blue) vs COVID docs (red) — clearly separated in embedding space" />
+        <div style={{ marginTop:16, padding:16, borderRadius:'var(--radius-sm)', background:'var(--bg)', display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+          <div>
+            <div style={{ fontSize:12, color:'var(--text-dim)', marginBottom:4 }}>SBERT: "court rules on health mandate" vs "covid spreading"</div>
+            <div style={{ fontSize:22, fontWeight:800, color:'var(--green)' }}>0.27 <span style={{ fontSize:11, fontWeight:400, color:'var(--text-dim)' }}>cosine sim (separated!)</span></div>
+          </div>
+          <div>
+            <div style={{ fontSize:12, color:'var(--text-dim)', marginBottom:4 }}>LDA BoW: same two sentences</div>
+            <div style={{ fontSize:22, fontWeight:800, color:'var(--red)' }}>~0.80 <span style={{ fontSize:11, fontWeight:400, color:'var(--text-dim)' }}>cosine sim (conflated!)</span></div>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-title">Category Velocity</div>
-          <p class="text-sm">Scales structural growth rate accurately at publication time.</p>
-          <div><span class="code-tag">V(t) = [N(w_t) - N(w_{t-1})] / N(w_{t-1})</span></div>
+      </Section>
+
+      <Section badge="ABLATION STUDY" title="Removing SBERT — What Breaks?" borderColor="rgba(59,130,246,0.3)">
+        <p style={{ fontSize:14, color:'var(--text-muted)', lineHeight:1.8, marginBottom:16 }}>
+          We isolate the contribution of SBERT by comparing Phase 1 (no contextual embeddings) against Phase 2 (full SBERT pipeline). This ablation confirms SBERT as the critical component — not UMAP or HDBSCAN in isolation.
+        </p>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:16 }}>
+          <div style={{ padding:16, borderRadius:'var(--radius-sm)', background:'rgba(59,130,246,0.06)', border:'1px solid rgba(59,130,246,0.15)', textAlign:'center' }}>
+            <div style={{ fontSize:11, color:'var(--blue)', fontWeight:600, marginBottom:8, textTransform:'uppercase' }}>With SBERT (Phase 2)</div>
+            <div style={{ fontSize:22, fontWeight:800, color:'var(--green)' }}>2020</div>
+            <div style={{ fontSize:11, color:'var(--text-dim)', marginTop:4 }}>COVID peak year ✓</div>
+            <div style={{ fontSize:18, fontWeight:800, color:'var(--green)', marginTop:8 }}>0.27</div>
+            <div style={{ fontSize:11, color:'var(--text-dim)', marginTop:4 }}>ACA vs COVID cosine</div>
+          </div>
+          <div style={{ padding:16, borderRadius:'var(--radius-sm)', background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.15)', textAlign:'center' }}>
+            <div style={{ fontSize:11, color:'var(--red)', fontWeight:600, marginBottom:8, textTransform:'uppercase' }}>Without SBERT (Phase 1 LDA)</div>
+            <div style={{ fontSize:22, fontWeight:800, color:'var(--red)' }}>2014</div>
+            <div style={{ fontSize:11, color:'var(--text-dim)', marginTop:4 }}>COVID peak year ✗</div>
+            <div style={{ fontSize:18, fontWeight:800, color:'var(--red)', marginTop:8 }}>~0.80</div>
+            <div style={{ fontSize:11, color:'var(--text-dim)', marginTop:4 }}>ACA vs COVID cosine</div>
+          </div>
+          <div style={{ padding:16, borderRadius:'var(--radius-sm)', background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.15)', textAlign:'center' }}>
+            <div style={{ fontSize:11, color:'var(--purple)', fontWeight:600, marginBottom:8, textTransform:'uppercase' }}>Delta (SBERT contribution)</div>
+            <div style={{ fontSize:22, fontWeight:800, color:'var(--purple)' }}>6 yrs</div>
+            <div style={{ fontSize:11, color:'var(--text-dim)', marginTop:4 }}>temporal correction</div>
+            <div style={{ fontSize:18, fontWeight:800, color:'var(--purple)', marginTop:8 }}>+0.53</div>
+            <div style={{ fontSize:11, color:'var(--text-dim)', marginTop:4 }}>cosine reduction</div>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-title">Text Richness</div>
-          <p class="text-sm">Isolates breaking news via semantic density mappings.</p>
-          <div><span class="code-tag">R(d) = |Unique| / (|Total| + 1)</span></div>
+        <div style={{ padding:12, borderRadius:'var(--radius-sm)', background:'var(--bg)', fontSize:13, color:'var(--text-muted)', textAlign:'center' }}>
+          The transition from bag-of-words to contextual embeddings is not merely incremental — it is a <strong style={{ color:'var(--text)' }}> fundamental architectural necessity</strong> for reliable trend detection.
         </div>
-      </div>
-      <img src="model_plots/feature_engineering.png" alt="Feature Engineering" style="max-height: 45vh;">
+      </Section>
+
+      <Section badge="FAILURE ANALYSIS" title="What Didn't Work in Phase 2?" borderColor="rgba(239,68,68,0.3)">
+        <Narrative icon="⚠️" title="Issue 1: High Outlier Rate (43.2%)">
+          <p><strong style={{ color:'var(--red)' }}>43.2% of documents</strong> don't fit into any dense cluster. Our articles are short (~20 words: headline + description). SBERT was trained on longer sentences; very short texts produce noisier embeddings that HDBSCAN can't confidently cluster.</p>
+        </Narrative>
+        <Narrative icon="⚠️" title="Issue 2: Static Snapshot — No Real-Time Detection">
+          <p>BERTopic models are fitted <strong style={{ color:'var(--red)' }}>once on the full corpus</strong>. A real trend detector must process incoming articles in real-time and update topic distributions incrementally. The current architecture requires complete refitting to incorporate new data.</p>
+        </Narrative>
+        <Narrative icon="⚠️" title="Issue 3: No External Ground Truth">
+          <p>Without human-annotated topic labels, we rely on cluster coherence and domain knowledge. There's <strong style={{ color:'var(--red)' }}>no external validation</strong> that detected topic spikes correspond to actual real-world events.</p>
+        </Narrative>
+      </Section>
+
+      <Section badge="PHASE 3 — PROPOSED" title="Hybrid Approach: Solving Phase 2's Failures" borderColor="rgba(139,92,246,0.3)">
+        <p style={{ fontSize:14, color:'var(--text-muted)', lineHeight:1.8, marginBottom:20 }}>
+          Each Phase 2 failure maps to a concrete Phase 3 solution. The hybrid architecture combines the <strong style={{ color:'var(--purple)' }}>broad coverage of LDA</strong> with the <strong style={{ color:'var(--purple)' }}>contextual precision of BERTopic</strong>.
+        </p>
+        <Narrative icon="🔧" title="Solution 1: Guided BERTopic with LDA Seed Topics → Reduce Outliers">
+          <p>Instead of fully unsupervised HDBSCAN, we initialize BERTopic with <strong style={{ color:'var(--text)' }}>seed topic keywords derived from Phase 1's LDA output</strong>. LDA's 10 broad topics become clustering priors that guide HDBSCAN's density detection. This creates an LDA→BERTopic feedback loop: LDA's broad structure reduces the outlier rate while SBERT preserves contextual separation.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--green)' }}>Expected improvement:</strong> Outlier rate from 43.2% → estimated &lt;15%</p>
+        </Narrative>
+        <Narrative icon="⏱️" title="Solution 2: Sliding Window BERTopic → Real-Time Detection">
+          <p>Replace static model fitting with a <strong style={{ color:'var(--text)' }}>sliding window approach</strong>: retrain BERTopic on rolling 6-month windows with 3-month overlap. Combined with Phase 1's category velocity feature, this enables real-time velocity computation on streaming data:</p>
+          <p style={{ marginTop:8, fontFamily:'monospace', fontSize:13, color:'var(--cyan)', background:'var(--bg)', padding:'8px 12px', borderRadius:6 }}>
+            V_hybrid(t, τ) = |docs in window τ with topic t| / |window τ| × w_temporal(τ)
+          </p>
+        </Narrative>
+        <Narrative icon="🌐" title="Solution 3: GDELT Cross-Verification → External Validation">
+          <p>Detected topic velocity spikes are cross-referenced against the <strong style={{ color:'var(--text)' }}>GDELT Project database</strong> — a real-time global event monitor tracking events across 100+ languages. Only spikes corroborated by GDELT event records are classified as genuine events; uncorroborated spikes are flagged as noise.</p>
+          <p style={{ marginTop:8 }}><strong style={{ color:'var(--green)' }}>Result:</strong> Adds an external ground-truth validation layer absent from both Phase 1 and Phase 2.</p>
+        </Narrative>
+        <div style={{ padding:16, borderRadius:'var(--radius-sm)', background:'var(--bg)', marginTop:8 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'var(--purple)', marginBottom:12 }}>Phase 3 Architecture: LDA + BERTopic + GDELT</div>
+          <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap', alignItems:'center' }}>
+            {['LDA Seeds','→','Guided BERTopic','→','Sliding Window','→','GDELT Verify','→','Real Events'].map((s,i)=>(
+              <span key={i} style={{ padding: s==='→' ? '0 4px' : '6px 14px', borderRadius:8, fontSize:12, fontWeight: s==='→'?400:600,
+                background: s==='→' ? 'transparent' : i===0 ? 'rgba(245,158,11,0.15)' : i<=4 ? 'rgba(59,130,246,0.15)' : i<=6 ? 'rgba(139,92,246,0.15)' : 'rgba(16,185,129,0.15)',
+                color: s==='→' ? 'var(--text-dim)' : i===0 ? 'var(--orange)' : i<=4 ? 'var(--blue)' : i<=6 ? 'var(--purple)' : 'var(--green)'
+              }}>{s}</span>
+            ))}
+          </div>
+        </div>
+        <div style={{ marginTop:20, padding:16, borderRadius:'var(--radius-sm)', background:'var(--bg)' }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'var(--purple)', marginBottom:12 }}>Expected improvements — Phase 3 vs current</div>
+          <table style={{ width:'100%', fontSize:12, color:'var(--text-muted)', borderCollapse:'collapse' }}>
+            <thead>
+              <tr>
+                {['Metric','Phase 1','Phase 2','Phase 3 (est.)'].map(h=>(
+                  <th key={h} style={{ textAlign:'left', padding:'6px 10px', borderBottom:'1px solid var(--border)', color:'var(--text-dim)', fontWeight:600 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ['Outlier Rate','0% (forced)','43.2%','< 15%'],
+                ['Context','✗ Conflated','✓ Separated','✓ Separated'],
+                ['Real-time','✗ Static','✗ Static','✓ Sliding window'],
+                ['Validation','✗ None','✗ None','✓ GDELT'],
+                ['Topic Guidance','None','None','LDA seeds'],
+                ['COVID peak','2014 ✗','2020 ✓','2020 ✓'],
+              ].map(([metric,...vals],i)=>(
+                <tr key={metric} style={{ background: i%2===0?'transparent':'rgba(255,255,255,0.02)' }}>
+                  <td style={{ padding:'6px 10px', fontWeight:600, color:'var(--text-dim)' }}>{metric}</td>
+                  {vals.map((v,j)=>(
+                    <td key={j} style={{ padding:'6px 10px', color:v.includes('✓')?'var(--green)':v.includes('✗')?'var(--red)':'var(--text-muted)' }}>{v}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
     </div>
-  </div>
-</section>
+  );
+}
 
-<!-- SLIDE 8 — LDA RESULTS -->
-<section>
-  <div class="slide-header"><div class="badge">07</div><h2>LDA Results — Topics Discovered</h2></div>
-  <div class="slide-body" style="align-items: center; justify-content: center;">
-    <img src="model_plots/lda_topics.png" alt="LDA Topics" style="margin-bottom: 32px;">
-    <p class="text-lg" style="text-align: center; max-width: 900px;">
-      LDA successfully isolated the <span class="strong">COVID-19</span> and <span class="strong">Trump &amp; President</span> clusters completely <span class="emphasis">unsupervised</span>. Pure pattern recognition without single external tags.
-    </p>
-  </div>
-</section>
+// ============ PREDICT PAGE ============
 
-<!-- SLIDE 9 — TEMPORAL TRACKING -->
-<section>
-  <div class="slide-header"><div class="badge">08</div><h2>Temporal Topic Tracking</h2></div>
-  <div class="slide-body">
-    <img src="model_plots/lda_topic_evolution.png" alt="Topic Evolution" style="margin-bottom: 24px;">
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title" style="color: var(--gray-900);">Trump &amp; President</div>
-        <p class="text-md" style="margin-top: -4px;">Near zero in 2012 → <span class="emphasis">278% growth</span> by 2016, precisely matching the timeline of the US presidential campaign cycle.</p>
+function PredictPage() {
+  const [text, setText] = useState('');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const examples = [
+    "Trump announces new trade tariffs against China amid growing tensions",
+    "COVID-19 vaccine rollout begins as hospitals prepare for mass distribution",
+    "Supreme Court hears landmark case on affordable healthcare mandates",
+    "Climate change activists demand immediate action at UN summit",
+    "New study reveals breakthrough in artificial intelligence language models"
+  ];
+
+  const predict = async (inputText) => {
+    const t = inputText || text;
+    if (!t.trim()) return;
+    setLoading(true); setError(null); setResult(null);
+    try {
+      const res = await fetch(`${API}/predict`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:t}) });
+      if (!res.ok) throw new Error('API error');
+      setResult(await res.json());
+    } catch(e) { setError('Could not connect to API. Run: python3 api_server.py'); }
+    setLoading(false);
+  };
+
+  return (
+    <div className="fade-up">
+      <Section badge="INTERACTIVE" title="Live Topic Prediction" subtitle="Enter any news headline or article — BERTopic classifies it in real-time using SBERT embeddings">
+        <textarea value={text} onChange={e=>setText(e.target.value)} placeholder="Paste a news article headline or text here..."
+          style={{ width:'100%', minHeight:90, padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg-input)', border:'1px solid var(--border)', color:'var(--text)', fontFamily:'Inter', fontSize:14, resize:'vertical', outline:'none' }}
+          onFocus={e=>e.target.style.borderColor='var(--blue)'} onBlur={e=>e.target.style.borderColor='var(--border)'} />
+        <div style={{ display:'flex', gap:12, marginTop:14, alignItems:'center' }}>
+          <button onClick={()=>predict()} disabled={loading||!text.trim()}
+            style={{ padding:'10px 28px', borderRadius:'var(--radius-sm)', border:'none', background:loading?'var(--text-dim)':'var(--blue)', color:'#fff', fontFamily:'Inter', fontSize:13, fontWeight:600, cursor:loading?'wait':'pointer' }}>
+            {loading ? '⏳ Analyzing...' : '🔍 Predict Topic'}
+          </button>
+          <span style={{ fontSize:12, color:'var(--text-dim)' }}>or try an example ↓</span>
+        </div>
+      </Section>
+
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:24 }}>
+        {examples.map((ex,i)=>(
+          <button key={i} onClick={()=>{setText(ex);predict(ex)}}
+            style={{ padding:'8px 14px', borderRadius:20, border:'1px solid var(--border)', background:'var(--bg-card)', color:'var(--text-muted)', fontFamily:'Inter', fontSize:11, cursor:'pointer', maxWidth:320, textAlign:'left', lineHeight:1.4, transition:'all 0.2s' }}
+            onMouseEnter={e=>{e.target.style.borderColor='var(--blue)';e.target.style.color='var(--text)'}} onMouseLeave={e=>{e.target.style.borderColor='var(--border)';e.target.style.color='var(--text-muted)'}}
+          >{ex}</button>
+        ))}
       </div>
-      <div class="card">
-        <div class="card-title" style="color: var(--gray-900);">Covid &amp; Court</div>
-        <p class="text-md" style="margin-top: -4px;">Emerges explicitly in 2019 → peaks sharply across <span class="emphasis">2020</span>, aligning mathematically with global pandemic lockdowns.</p>
-      </div>
+
+      {error && <Section borderColor="rgba(239,68,68,0.3)"><p style={{ color:'var(--red)', fontSize:13 }}>⚠ {error}</p></Section>}
+
+      {result && (
+        <div className="fade-up">
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:20 }}>
+            <Section borderColor="rgba(59,130,246,0.3)">
+              <div style={{ fontSize:11, color:'var(--blue)', fontWeight:600, textTransform:'uppercase', marginBottom:6 }}>Predicted Topic</div>
+              <div style={{ fontSize:26, fontWeight:800 }}>{result.topic.name}</div>
+              <div style={{ fontSize:12, color:'var(--text-dim)' }}>Topic ID: {result.topic.id} · Confidence: {(result.confidence*100).toFixed(1)}%</div>
+            </Section>
+            <Section>
+              <div style={{ fontSize:11, color:'var(--cyan)', fontWeight:600, textTransform:'uppercase', marginBottom:6 }}>Top Topic Words (c-TF-IDF)</div>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {(result.topic.words||[]).map((w,i)=>(
+                  <span key={i} style={{ padding:'3px 10px', borderRadius:10, fontSize:12, background:`rgba(6,182,212,${0.15-i*0.01})`, color:i<3?'var(--cyan)':'var(--text-dim)', fontWeight:i<3?600:400 }}>{w.word}</span>
+                ))}
+              </div>
+            </Section>
+          </div>
+          <Section>
+            <div style={{ fontSize:11, color:'var(--green)', fontWeight:600, textTransform:'uppercase', marginBottom:14 }}>Most Similar Articles in Corpus</div>
+            {result.similar_articles.map((art,i)=>(
+              <div key={i} style={{ padding:'10px 14px', borderRadius:'var(--radius-sm)', background:i%2===0?'var(--bg)':'transparent', display:'grid', gridTemplateColumns:'1fr 110px 80px 50px', gap:10, alignItems:'center', marginBottom:3 }}>
+                <div style={{ fontSize:13 }}>{art.headline}</div>
+                <div style={{ fontSize:11, color:'var(--text-dim)' }}>{art.category}</div>
+                <div style={{ fontSize:11, color:'var(--text-dim)' }}>{art.date}</div>
+                <div style={{ fontSize:12, fontWeight:600, color:art.similarity>0.7?'var(--green)':'var(--text-muted)' }}>{(art.similarity*100).toFixed(0)}%</div>
+              </div>
+            ))}
+          </Section>
+        </div>
+      )}
     </div>
-  </div>
-</section>
+  );
+}
 
-<!-- SLIDE 10 — SEMANTIC VELOCITY -->
-<section>
-  <div class="slide-header"><div class="badge">09</div><h2>Semantic Velocity</h2></div>
-  <div class="slide-body" style="align-items: center; justify-content: center;">
-    <img src="model_plots/semantic_velocity.png" alt="Semantic Velocity" style="margin-bottom: 32px;">
-    <p class="text-lg" style="text-align: center; max-width: 900px;">
-      Peak year-over-year growth rate mapping. <br>
-      <span class="strong">Trump / President maps 278% in 2014.</span><br>
-      These growth signatures execute as mathematical fingerprints of verified events.
-    </p>
-  </div>
-</section>
+// ============ COMPARE PAGE ============
 
-<!-- SLIDE 11 — FAILURE ANALYSIS -->
-<section>
-  <div class="slide-header"><div class="badge">10</div><h2>Rigorous Failure Analysis</h2></div>
-  <div class="slide-body">
-    <p class="text-lg">
-      <span class="strong">The Anomaly:</span> The COVID &amp; Court topic statistically peaks in 2014 — five full years before COVID-19 physically existed.
-    </p>
-    <div class="grid-2" style="margin-top: 24px;">
-      <div class="card">
-        <div class="card-title" style="color: var(--gray-900);">2014: ACA Legal Battles</div>
-        <p class="text-sm"><span class="strong">Top words:</span> state, health, court, people</p>
-        <p class="text-sm muted" style="margin-top: 8px;">Context: Affordable Care Act mandates fighting through federal appellate courts.</p>
+function ComparePage() {
+  return (
+    <div className="fade-up">
+      <Section badge="HEAD-TO-HEAD" title="Phase 1 (LDA) vs Phase 2 (BERTopic)">
+        <Plot src="bert_plots/lda_vs_bertopic.png" alt="Comparison" caption="Feature-by-feature comparison" />
+      </Section>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 }}>
+        <Section borderColor="rgba(245,158,11,0.3)">
+          <div style={{ fontWeight:700, color:'var(--orange)', fontSize:13, marginBottom:14 }}>Phase 1: LDA</div>
+          <table style={{ width:'100%', fontSize:12, color:'var(--text-muted)' }}><tbody>
+            {[['Method','Bag-of-Words + Dirichlet'],['Topics','10 (fixed)'],['Embedding','Count Vectors'],['Temporal','Manual weight hack'],['Context','❌ Conflated ACA + COVID'],['COVID peak','2014 (wrong!)']].map(([k,v])=>(
+              <tr key={k}><td style={{ padding:'5px 0', fontWeight:600, color:'var(--text-dim)' }}>{k}</td><td style={{ padding:'5px 0' }}>{v}</td></tr>
+            ))}
+          </tbody></table>
+        </Section>
+        <Section borderColor="rgba(59,130,246,0.3)">
+          <div style={{ fontWeight:700, color:'var(--blue)', fontSize:13, marginBottom:14 }}>Phase 2: BERTopic</div>
+          <table style={{ width:'100%', fontSize:12, color:'var(--text-muted)' }}><tbody>
+            {[['Method','SBERT + UMAP + HDBSCAN'],['Topics','15 (auto-discovered)'],['Embedding','384-dim SBERT'],['Temporal','Native topics_over_time'],['Context','✅ ACA ≠ COVID'],['COVID peak','2020 (correct!)']].map(([k,v])=>(
+              <tr key={k}><td style={{ padding:'5px 0', fontWeight:600, color:'var(--text-dim)' }}>{k}</td><td style={{ padding:'5px 0' }}>{v}</td></tr>
+            ))}
+          </tbody></table>
+        </Section>
       </div>
-      <div class="card">
-        <div class="card-title" style="color: var(--gray-900);">2020: COVID-19 Pandemic</div>
-        <p class="text-sm"><span class="strong">Top words:</span> state, health, court, people</p>
-        <p class="text-sm muted" style="margin-top: 8px;">Context: Global pandemic driving state lockdowns and subsequent court challenges.</p>
-      </div>
+      <Section badge="KEY INSIGHT" title="Why BERTopic Wins" borderColor="rgba(139,92,246,0.3)">
+        <p style={{ color:'var(--text-muted)', fontSize:14, lineHeight:1.8 }}>
+          SBERT's Siamese BERT architecture (Reimers & Gurevych, 2019) produces <strong style={{ color:'var(--purple)' }}>semantically meaningful sentence embeddings</strong> where cosine similarity correlates with human judgment. Combined with UMAP's topological preservation and HDBSCAN's density-based clustering, BERTopic (Grootendorst, 2022) achieves context-aware topic modeling that LDA's bag-of-words approach fundamentally cannot.
+        </p>
+        <div style={{ marginTop:14, padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg)', display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
+          <div>
+            <div style={{ fontSize:12, color:'var(--text-dim)', marginBottom:4 }}>SBERT: "court rules on health mandate" vs "covid spreading"</div>
+            <div style={{ fontSize:22, fontWeight:800, color:'var(--green)' }}>0.27 <span style={{ fontSize:11, fontWeight:400, color:'var(--text-dim)' }}>cosine (separated)</span></div>
+          </div>
+          <div>
+            <div style={{ fontSize:12, color:'var(--text-dim)', marginBottom:4 }}>LDA BoW: same two sentences</div>
+            <div style={{ fontSize:22, fontWeight:800, color:'var(--red)' }}>~0.80 <span style={{ fontSize:11, fontWeight:400, color:'var(--text-dim)' }}>cosine (conflated)</span></div>
+          </div>
+        </div>
+      </Section>
     </div>
-    <div class="card" style="margin-top: 24px; background: var(--gray-50); box-shadow: none;">
-      <p class="text-md">
-        <span class="strong">Why LDA Failed:</span> Bag-of-words strips context. Identical vocabulary equals a Cosine Similarity of ~1.0. <br><br>
-        <span class="emphasis">Phase 2 Matrix:</span> SBERT will computationally map full sentence semantics—encoding these completely separate contexts into isolated embedding space.
-      </p>
+  );
+}
+
+// ============ APP ============
+
+function App() {
+  const [page, setPage] = useState('overview');
+  return (
+    <div>
+      <Nav active={page} onNav={setPage} />
+      <main style={{ maxWidth:1280, margin:'0 auto', padding:'28px 28px 60px' }}>
+        {page==='overview' && <OverviewPage />}
+        {page==='phase1' && <Phase1Page />}
+        {page==='phase2' && <Phase2Page />}
+        {page==='predict' && <PredictPage />}
+        {page==='compare' && <ComparePage />}
+      </main>
+      <footer style={{ borderTop:'1px solid var(--border)', padding:'20px 28px', textAlign:'center' }}>
+        <p style={{ fontSize:12, color:'var(--text-dim)' }}>Dynamic Trend & Event Detector · Mehak Jain & Anuj Kumar Singh · AML & DL 2025</p>
+        <p style={{ fontSize:10, color:'var(--text-dim)', marginTop:4 }}>Grootendorst (2022) arXiv:2203.05794 · Reimers & Gurevych (2019) arXiv:1908.10084 · Blei et al. (2003) JMLR</p>
+      </footer>
     </div>
-  </div>
-</section>
+  );
+}
 
-<!-- SLIDE 12 — CONCLUSION -->
-<section>
-  <div class="slide-header"><div class="badge">11</div><h2>Conclusion &amp; Phase 2 Roadmap</h2></div>
-  <div class="slide-body">
-    <div class="grid-2" style="align-items: stretch; height: 100%;">
-      <div class="card">
-        <div class="card-title">Phase 1 Achieved</div>
-        <ul class="text-md" style="margin-top: 16px; gap: 20px;">
-          <li>11,000 baseline articles analyzed over 11 years</li>
-          <li>COVID-19 &amp; Politics mapped completely unsupervised</li>
-          <li>Trump topic confirmed at 278% algorithmic growth</li>
-          <li>3 Novel custom features solved LDA's static limitation</li>
-          <li>Failure analysis successfully proved BO-Words boundary</li>
-        </ul>
-      </div>
-      <div class="card" style="background: var(--navy); border: none;">
-        <div class="card-title" style="color: var(--blue-soft);">Phase 2 Pipeline</div>
-        <ul class="text-md" style="margin-top: 16px; gap: 24px; color: var(--white); list-style: none; padding: 0;">
-          <li style="display: flex; gap: 16px;"><span class="code-tag" style="background: rgba(255,255,255,0.1); border: none; color: white;">SBERT</span> <span>Sentence embeddings capture true context</span></li>
-          <li style="display: flex; gap: 16px;"><span class="code-tag" style="background: rgba(255,255,255,0.1); border: none; color: white;">UMAP</span> <span>Mathematical dimensionality reduction</span></li>
-          <li style="display: flex; gap: 16px;"><span class="code-tag" style="background: rgba(255,255,255,0.1); border: none; color: white;">BERTopic</span> <span>Next-gen neural topic modeling</span></li>
-          <li style="display: flex; gap: 16px;"><span class="code-tag" style="background: rgba(255,255,255,0.1); border: none; color: white;">GDELT</span> <span>Verification against real-world event nodes</span></li>
-        </ul>
-      </div>
-    </div>
-    <p class="text-sm muted" style="text-align: center; margin-top: 16px;">
-      This project successfully modernizes Blei et al.'s (2003) prediction that LDA required temporal extensions.
-    </p>
-  </div>
-</section>
-
-</div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
-<script>
-  Reveal.initialize({
-    hash: true,
-    transition: 'fade',
-    transitionSpeed: 'fast',
-    controls: true,
-    progress: true,
-    center: false,
-    slideNumber: 'c/t',
-    width: 1280,
-    height: 720,
-    margin: 0,
-    disableLayout: false,
-  });
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
 </html>

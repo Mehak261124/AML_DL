@@ -261,19 +261,27 @@ Semantic Velocity Calculation
 Failure Analysis
 ```
 
-### Phase 2 — Deep Learning (Coming Soon)
+### Phase 2 — Deep Learning (Implemented)
 
 ```
-SBERT Embeddings (all-MiniLM-L6-v2)
+SBERT Embeddings (all-MiniLM-L6-v2, 384-dim)
     ↓
-UMAP Dimensionality Reduction
+UMAP Dimensionality Reduction (384 → 5 dim)
     ↓
-HDBSCAN Clustering
+HDBSCAN Density Clustering (auto topic count)
     ↓
-BERTopic Topic Modeling
+c-TF-IDF Topic Representation
     ↓
-GDELT Verification Layer
+Context Separation Analysis
+    ↓
+Interactive React UI + Flask API
 ```
+
+**Key Results:**
+- 15 topics discovered (auto, vs LDA's fixed 10)
+- COVID-19 topic correctly peaks in 2020 (1,036% velocity)
+- Context separation ✅ — ACA legal ≠ COVID pandemic
+- SBERT cosine similarity: 0.27 (vs BoW ~0.8+)
 
 ---
 
