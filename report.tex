@@ -274,7 +274,7 @@ Following Grootendorst~\cite{grootendorst2022}, BERTopic composes four stages: (
 
 Algorithm~\ref{alg:bertopic} formalises the four-stage pipeline used in implementation.
 
-\paragraph{Preprocessing note.} Text cleaning for SBERT intentionally differs from Phase 1: LDA's cleaning strips all non-alpha characters (regex \texttt{[\^a-z\textbackslash s]}) to reduce vocabulary noise in count vectors. SBERT cleaning retains digits (regex \texttt{[\^a-z0-9\textbackslash s]}) because numbers such as \emph{19} in \emph{covid 19} and \emph{2020} carry discriminative temporal meaning in full-sentence semantic representations.
+\paragraph{Preprocessing note.} Text cleaning for SBERT intentionally differs from Phase 1: LDA's cleaning strips all non-alpha characters (regex \verb|[^a-z\s]|) to reduce vocabulary noise in count vectors. SBERT cleaning retains digits (regex \verb|[^a-z0-9\s]|) because numbers such as \emph{19} in \emph{covid 19} and \emph{2020} carry discriminative temporal meaning in full-sentence semantic representations.
 
 \subsection{Stage 1 --- Sentence-BERT Embeddings}
 \label{sec:sbert}
@@ -504,17 +504,17 @@ To isolate the causal contribution of each pipeline stage, we run three configur
 \begin{table}[H]
 \centering
 \small
-\caption{Three-way component ablation. Config 2 confirms that UMAP+HDBSCAN cannot create separation signal absent from the input representation.}
+\caption{Three-way component ablation.}
 \label{tab:ablation}
 \begin{tabular}{lcc}
 \toprule
-Configuration & COVID peak & Cross-group $\cos$ \\
+Configuration & COVID peak & Cross-cos \\
 \midrule
-Config 1: Full SBERT pipeline & \textbf{2020} \ding{51} & \textbf{0.079} \\
-Config 2: BoW+SVD+UMAP+HDBSCAN & 2014 \ding{55} & $\sim$BoW \\
-Config 3: BoW only (LDA) & 2014 \ding{55} & $\sim 0.80$ \\
+Config 1: Full SBERT & \textbf{2020} \ding{51} & \textbf{0.079} \\
+Config 2: BoW+SVD+UMAP & 2014 \ding{55} & $\sim$BoW \\
+Config 3: BoW only (LDA) & 2014 \ding{55} & $\sim$0.80 \\
 \midrule
-$\Delta$ (Config 1 vs Config 3) & \textbf{6 years} & $\mathbf{-0.72}$ \\
+$\Delta$ (C1 vs C3) & 6 years & $-$0.72 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -602,7 +602,7 @@ As seen in Figure~\ref{fig:token_attr} and Table~\ref{tab:attr_tokens}, high-att
 \subsection{Regularization Analysis}
 \label{sec:regularization}
 
-To prevent overfitting—particularly in HDBSCAN density estimation—we employ four layers of regularization:
+To prevent overfitting - particularly in HDBSCAN density estimation - we employ four layers of regularization:
 \begin{enumerate}[leftmargin=*,noitemsep]
 \item \textbf{Vocab Regularization:} $\text{df} \in [5, 0.95]$ eliminates both hapax legomena and corpus-wide noise tokens.
 \item \textbf{Density Regularization:} $\min\_samples=10$ provides a conservative core-distance estimate, preventing small noise fluctuations from being labeled as topics.
