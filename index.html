@@ -5,6 +5,9 @@
   <title>Dynamic Trend & Event Detector — Phase 1 & 2</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Neural Topic Modeling: LDA vs BERTopic for emerging trend detection in news articles">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -34,6 +37,7 @@
 <script type="text/babel">
 const { useState, useEffect } = React;
 const API = 'http://localhost:5001/api';
+const UI_BUILD = '2026-04-20-b3';
 
 // ============ REUSABLE COMPONENTS ============
 
@@ -43,7 +47,8 @@ function Nav({ active, onNav }) {
   return (
     <nav style={{ position:'sticky', top:0, zIndex:100, background:'rgba(10,14,26,0.85)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', padding:'0 32px' }}>
       <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', alignItems:'center', height:64, gap:8 }}>
-        <div style={{ fontWeight:700, fontSize:18, marginRight:32, background:'linear-gradient(135deg,#3b82f6,#06b6d4)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>DT&ED</div>
+        <div style={{ fontWeight:700, fontSize:18, marginRight:20, background:'linear-gradient(135deg,#3b82f6,#06b6d4)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}>DT&ED</div>
+        <div style={{ fontSize:10, color:'var(--text-dim)', marginRight:12 }}>build {UI_BUILD}</div>
         {tabs.map(t=>(
           <button key={t} onClick={()=>onNav(t)} style={{ padding:'8px 16px', borderRadius:8, border:'none', cursor:'pointer', background:active===t?'var(--blue)':'transparent', color:active===t?'#fff':'var(--text-muted)', fontFamily:'Inter', fontSize:13, fontWeight:500, transition:'all 0.2s' }}>{labels[t]}</button>
         ))}
@@ -652,6 +657,9 @@ function InterpretabilityPage({ latestPrediction }) {
     setLiveLoading(true);
     setLiveError(null);
     try {
+      if (onGithubPages && apiBase.includes('localhost')) {
+        throw new Error('GitHub Pages cannot call localhost. Set API base URL to your deployed Flask backend.');
+      }
       const res = await fetch(`${apiBase}/attribution_live`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -663,7 +671,7 @@ function InterpretabilityPage({ latestPrediction }) {
       setLiveTop(payload.top_tokens || []);
       setLiveUpdatedAt(new Date().toLocaleTimeString());
     } catch (e) {
-      setLiveError(`Could not compute live attribution from ${apiBase}. Ensure api_server.py is running and reachable.`);
+      setLiveError(`${e.message || 'Could not compute live attribution.'} Current API base: ${apiBase}`);
       setLiveRows([]);
       setLiveTop([]);
     } finally {
@@ -696,7 +704,7 @@ function InterpretabilityPage({ latestPrediction }) {
         subtitle="This plot updates for your current input text. It auto-refreshes while typing and can also be recomputed manually.">
         {onGithubPages && (
           <div style={{ marginBottom:10, padding:10, borderRadius:8, background:'rgba(245,158,11,0.12)', border:'1px solid rgba(245,158,11,0.25)', fontSize:12, color:'#fde68a' }}>
-            GitHub Pages is static. Dynamic attribution needs a running Flask API. Set API URL below (default is local).
+            You are on GitHub Pages (static hosting). Dynamic attribution requires a running backend API. If API URL is localhost, this will not work for remote viewers.
           </div>
         )}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 160px', gap:8, marginBottom:10 }}>
