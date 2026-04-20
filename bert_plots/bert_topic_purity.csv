@@ -1,16 +1,9 @@
 topic,label,top_category,purity,size
-11,the / to / of,TRAVEL,0.7279,136
-12,wedding / weddings / the,WEDDINGS,0.6364,99
-5,the / game / to,SPORTS,0.5946,222
-9,olympics / olympic / the,SPORTS,0.5571,140
-8,hurricane / storm / in,U.S. NEWS,0.4041,146
-14,prince / harry / meghan,ENTERTAINMENT,0.4,100
-2,and / to / you,FOOD & DRINK,0.3899,536
-10,the / tax / to,BUSINESS,0.3444,151
-6,climate / change / to,POLITICS,0.3436,195
-3,coronavirus / covid19 / the,POLITICS,0.3203,487
-0,the / to / in,POLITICS,0.3053,3603
-7,students / to / education,POLITICS,0.2775,191
-1,to / you / and,WELLNESS,0.2686,659
-13,drug / to / marijuana,POLITICS,0.2614,88
-4,dog / the / of,SCIENCE,0.1685,273
+2,the / to / of,POLITICS,0.3576,2265
+0,the / to / in,POLITICS,0.3306,3412
+4,the / to / in,POLITICS,0.2699,489
+6,the / to / you,WELLNESS,0.225,120
+7,of / the / and,WELLNESS,0.215,107
+3,the / and / to,WELLNESS,0.2093,1209
+5,the / of / and,WELLNESS,0.1628,129
+1,the / to / and,POLITICS,0.1604,2861

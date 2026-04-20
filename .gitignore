@@ -12,6 +12,11 @@ News_Category_Dataset_v3.json
 # model_plots
 # bert_plots/
 
+# bert_plots: keep UI images trackable, ignore non-UI/generated artifacts
+bert_plots/cached_model/
+bert_plots/*.csv
+bert_plots/*.json
+
 # LaTeX intermediate build files (but keeping report.tex and report.pdf)
 *.aux
 *.log
