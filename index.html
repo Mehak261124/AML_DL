@@ -39,6 +39,72 @@ const { useState, useEffect } = React;
 const API = 'http://localhost:5001/api';
 const UI_BUILD = '2026-04-20-b3';
 
+function tokenizeClient(text) {
+  const cleaned = String(text || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned ? cleaned.split(' ') : [];
+}
+
+function hashTokenVec(token, dim = 256) {
+  const vec = new Float32Array(dim);
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < token.length; i++) {
+    h ^= token.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  for (let i = 0; i < dim; i++) {
+    h ^= h << 13; h ^= h >>> 17; h ^= h << 5;
+    vec[i] = ((h >>> 0) % 2000) / 1000 - 1; // [-1, 1]
+  }
+  return vec;
+}
+
+function meanEmbed(tokens, dim = 256) {
+  const out = new Float32Array(dim);
+  if (!tokens.length) return out;
+  for (const t of tokens) {
+    const v = hashTokenVec(t, dim);
+    for (let i = 0; i < dim; i++) out[i] += v[i];
+  }
+  for (let i = 0; i < dim; i++) out[i] /= tokens.length;
+  let norm = 0;
+  for (let i = 0; i < dim; i++) norm += out[i] * out[i];
+  norm = Math.sqrt(norm) || 1;
+  for (let i = 0; i < dim; i++) out[i] /= norm;
+  return out;
+}
+
+function cosineVec(a, b) {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+  return s;
+}
+
+function localAttribution(text, maxTokens = 50) {
+  let tokens = tokenizeClient(text);
+  if (!tokens.length) return [];
+  tokens = tokens.slice(0, maxTokens);
+  const eOrig = meanEmbed(tokens);
+  const rows = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const masked = tokens.slice(0, i).concat(tokens.slice(i + 1));
+    if (!masked.length) {
+      rows.push({ position: i, token: tokens[i], attribution_score: 1.0 });
+      continue;
+    }
+    const eMask = meanEmbed(masked);
+    const score = 1 - cosineVec(eOrig, eMask);
+    rows.push({ position: i, token: tokens[i], attribution_score: Number(score.toFixed(6)) });
+  }
+  rows.sort((x, y) => y.attribution_score - x.attribution_score);
+  rows.forEach((r, idx) => r.rank = idx + 1);
+  rows.sort((x, y) => x.position - y.position);
+  return rows;
+}
+
 // ============ REUSABLE COMPONENTS ============
 
 function Nav({ active, onNav }) {
@@ -604,6 +670,7 @@ function InterpretabilityPage({ latestPrediction }) {
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
   const [liveUpdatedAt, setLiveUpdatedAt] = useState(null);
+  const [liveMode, setLiveMode] = useState('backend');
   const [apiBase, setApiBase] = useState(() => {
     const saved = window.localStorage.getItem('aml_api_base');
     return saved || API;
@@ -657,23 +724,36 @@ function InterpretabilityPage({ latestPrediction }) {
     setLiveLoading(true);
     setLiveError(null);
     try {
-      if (onGithubPages && apiBase.includes('localhost')) {
-        throw new Error('GitHub Pages cannot call localhost. Set API base URL to your deployed Flask backend.');
+      const isLocalApi = /localhost|127\.0\.0\.1/.test(apiBase);
+      if (onGithubPages && isLocalApi) {
+        const rows = localAttribution(t);
+        const top = [...rows].sort((a, b) => b.attribution_score - a.attribution_score).slice(0, 5);
+        setLiveRows(rows);
+        setLiveTop(top.map(r => ({ token: r.token, attribution_score: r.attribution_score, rank: r.rank })));
+        setLiveMode('local');
+        setLiveUpdatedAt(new Date().toLocaleTimeString());
+        setLiveError('Using browser fallback attribution (approximate), because GitHub Pages cannot call localhost backend.');
+        return;
       }
       const res = await fetch(`${apiBase}/attribution_live`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: t })
       });
-      if (!res.ok) throw new Error('Live attribution API error');
+      if (!res.ok) throw new Error(`Live attribution API error (${res.status})`);
       const payload = await res.json();
       setLiveRows(payload.rows || []);
       setLiveTop(payload.top_tokens || []);
+      setLiveMode('backend');
       setLiveUpdatedAt(new Date().toLocaleTimeString());
     } catch (e) {
-      setLiveError(`${e.message || 'Could not compute live attribution.'} Current API base: ${apiBase}`);
-      setLiveRows([]);
-      setLiveTop([]);
+      const rows = localAttribution(t);
+      const top = [...rows].sort((a, b) => b.attribution_score - a.attribution_score).slice(0, 5);
+      setLiveRows(rows);
+      setLiveTop(top.map(r => ({ token: r.token, attribution_score: r.attribution_score, rank: r.rank })));
+      setLiveMode('local');
+      setLiveUpdatedAt(new Date().toLocaleTimeString());
+      setLiveError(`Backend unavailable (${e.message || 'request failed'}). Showing browser fallback attribution (approximate).`);
     } finally {
       setLiveLoading(false);
     }
@@ -727,6 +807,9 @@ function InterpretabilityPage({ latestPrediction }) {
           {liveUpdatedAt && (
             <span style={{ marginLeft:10, fontSize:11, color:'var(--text-dim)' }}>Last updated: {liveUpdatedAt}</span>
           )}
+          <span style={{ marginLeft:10, fontSize:11, color: liveMode === 'backend' ? 'var(--green)' : 'var(--orange)' }}>
+            Mode: {liveMode === 'backend' ? 'Backend (SBERT)' : 'Browser Fallback'}
+          </span>
         </div>
         {liveError && <p style={{ fontSize:13, color:'var(--red)', marginBottom:10 }}>{liveError}</p>}
         {liveRows.length > 0 && (
