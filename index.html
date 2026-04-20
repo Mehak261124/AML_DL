@@ -453,7 +453,7 @@ function Phase2Page() {
 
 // ============ PREDICT PAGE ============
 
-function PredictPage() {
+function PredictPage({ onPredicted }) {
   const [text, setText] = useState('');
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -474,7 +474,9 @@ function PredictPage() {
     try {
       const res = await fetch(`${API}/predict`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:t}) });
       if (!res.ok) throw new Error('API error');
-      setResult(await res.json());
+      const payload = await res.json();
+      setResult(payload);
+      if (onPredicted) onPredicted(payload);
     } catch(e) { setError('Could not connect to API. Run: python3 api_server.py'); }
     setLoading(false);
   };
@@ -529,7 +531,7 @@ function PredictPage() {
                 <div style={{ fontSize:13 }}>{art.headline}</div>
                 <div style={{ fontSize:11, color:'var(--text-dim)' }}>{art.category}</div>
                 <div style={{ fontSize:11, color:'var(--text-dim)' }}>{art.date}</div>
-                <div style={{ fontSize:12, fontWeight:600, color:art.similarity>0.7?'var(--green)':'var(--text-muted)' }}>{(art.similarity*100).toFixed(0)}%</div>
+                <div style={{ fontSize:12, fontWeight:600, color:art.sbert_similarity>0.7?'var(--green)':'var(--text-muted)' }}>{(art.sbert_similarity*100).toFixed(0)}%</div>
               </div>
             ))}
           </Section>
@@ -586,11 +588,16 @@ function ComparePage() {
 
 // ============ INTERPRETABILITY PAGE ============
 
-function InterpretabilityPage() {
+function InterpretabilityPage({ latestPrediction }) {
   const [heatmap, setHeatmap] = useState(null);
   const [rowsByTopic, setRowsByTopic] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [liveText, setLiveText] = useState('');
+  const [liveRows, setLiveRows] = useState([]);
+  const [liveTop, setLiveTop] = useState([]);
+  const [liveLoading, setLiveLoading] = useState(false);
+  const [liveError, setLiveError] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -628,8 +635,91 @@ function InterpretabilityPage() {
     return () => { mounted = false; };
   }, []);
 
+  const runLiveAttribution = async (inputText) => {
+    const t = (inputText || liveText || '').trim();
+    if (!t) {
+      setLiveError('Enter text (or run a prediction first) to generate a dynamic attribution plot.');
+      setLiveRows([]);
+      setLiveTop([]);
+      return;
+    }
+    setLiveLoading(true);
+    setLiveError(null);
+    try {
+      const res = await fetch(`${API}/attribution_live`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: t })
+      });
+      if (!res.ok) throw new Error('Live attribution API error');
+      const payload = await res.json();
+      setLiveRows(payload.rows || []);
+      setLiveTop(payload.top_tokens || []);
+    } catch (e) {
+      setLiveError('Could not compute live attribution. Ensure api_server.py is running.');
+      setLiveRows([]);
+      setLiveTop([]);
+    } finally {
+      setLiveLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (latestPrediction && latestPrediction.input_text) {
+      setLiveText(latestPrediction.input_text);
+      runLiveAttribution(latestPrediction.input_text);
+    }
+  }, [latestPrediction]);
+
+  const maxScore = liveRows.length ? Math.max(...liveRows.map(r => Number(r.attribution_score) || 0), 1e-6) : 1;
+
   return (
     <div className="fade-up">
+      <Section badge="DYNAMIC" title="Live Input Attribution"
+        subtitle="This plot updates for your current input text. Change text and click Generate to recompute token-level contributions.">
+        <textarea value={liveText} onChange={e=>setLiveText(e.target.value)}
+          placeholder="Paste text here (or use a prediction from Live Predict tab)..."
+          style={{ width:'100%', minHeight:90, padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg-input)', border:'1px solid var(--border)', color:'var(--text)', fontFamily:'Inter', fontSize:14, resize:'vertical', outline:'none' }} />
+        <div style={{ marginTop:12, marginBottom:14 }}>
+          <button onClick={()=>runLiveAttribution()} disabled={liveLoading || !liveText.trim()}
+            style={{ padding:'10px 18px', borderRadius:'var(--radius-sm)', border:'none', background:liveLoading?'var(--text-dim)':'var(--blue)', color:'#fff', fontFamily:'Inter', fontSize:13, fontWeight:600, cursor:liveLoading?'wait':'pointer' }}>
+            {liveLoading ? 'Computing...' : 'Generate Dynamic Plot'}
+          </button>
+        </div>
+        {liveError && <p style={{ fontSize:13, color:'var(--red)', marginBottom:10 }}>{liveError}</p>}
+        {liveRows.length > 0 && (
+          <div style={{ border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:12, background:'var(--bg)' }}>
+            <div style={{ display:'grid', gridTemplateColumns:`repeat(${Math.min(liveRows.length, 20)}, minmax(26px, 1fr))`, gap:6, overflowX:'auto', paddingBottom:4 }}>
+              {liveRows.slice(0, 20).map((row, idx) => {
+                const score = Number(row.attribution_score) || 0;
+                const alpha = Math.min(1, Math.max(0.15, score / (maxScore || 1)));
+                return (
+                  <div key={`${row.token}-${idx}`} title={`${row.token}: ${score.toFixed(4)}`}
+                    style={{ height:72, borderRadius:6, background:`rgba(16,185,129,${alpha})`, border:'1px solid rgba(16,185,129,0.2)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'4px 2px' }}>
+                    <span style={{ writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:10, color:'#d1fae5', letterSpacing:'0.02em' }}>{row.token}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <p style={{ fontSize:11, color:'var(--text-dim)', marginTop:8 }}>
+              Dynamic token attribution plot for current input (first 20 tokens shown). Darker cells indicate stronger contribution.
+            </p>
+          </div>
+        )}
+        {liveTop.length > 0 && (
+          <div style={{ marginTop:14 }}>
+            <div style={{ fontSize:12, color:'var(--cyan)', marginBottom:6, fontWeight:600 }}>Top attributed tokens (current input)</div>
+            <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+              {liveTop.map((tk, i) => (
+                <span key={`${tk.token}-${i}`} style={{ padding:'5px 10px', borderRadius:999, background:'rgba(6,182,212,0.15)', color:'var(--cyan)', fontSize:12 }}>
+                  {tk.token} ({Number(tk.attribution_score).toFixed(4)})
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </Section>
+
       <Section badge="STEP 13" title="Embedding Interpretability — Token Attribution"
         subtitle="Token attribution measures how much removing each word changes the SBERT embedding. High scores confirm the model attends to topically relevant terms.">
         <div style={{ padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg)', marginBottom:18, fontSize:13, color:'var(--text-muted)', lineHeight:1.8 }}>
@@ -683,6 +773,7 @@ function InterpretabilityPage() {
 
 function App() {
   const [page, setPage] = useState('overview');
+  const [latestPrediction, setLatestPrediction] = useState(null);
   return (
     <div>
       <Nav active={page} onNav={setPage} />
@@ -690,9 +781,9 @@ function App() {
         {page==='overview' && <OverviewPage />}
         {page==='phase1' && <Phase1Page />}
         {page==='phase2' && <Phase2Page />}
-        {page==='predict' && <PredictPage />}
+        {page==='predict' && <PredictPage onPredicted={setLatestPrediction} />}
         {page==='compare' && <ComparePage />}
-        {page==='interpretability' && <InterpretabilityPage />}
+        {page==='interpretability' && <InterpretabilityPage latestPrediction={latestPrediction} />}
       </main>
       <footer style={{ borderTop:'1px solid var(--border)', padding:'20px 28px', textAlign:'center' }}>
         <p style={{ fontSize:12, color:'var(--text-dim)' }}>Dynamic Trend & Event Detector · Mehak Jain & Anuj Kumar Singh · AML & DL 2025</p>

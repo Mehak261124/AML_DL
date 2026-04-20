@@ -14,6 +14,7 @@
 #   GET  /api/separation     — ACA vs COVID context separation scores
 #   GET  /api/purity         — per-topic category purity scores
 #   GET  /api/attribution/<topic_id> — token attribution rows for a topic
+#   POST /api/attribution_live      — live token attribution for input text
 #   POST /api/similarity     — compare BoW vs SBERT cosine for two texts
 #
 # Model caching:
@@ -60,6 +61,51 @@ def clean_text(text):
     text = re.sub(r'[^a-z0-9\s]', '', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
+
+
+def tokenize_for_attribution(text):
+    """Tokenize text in the same cleaned space used for SBERT input."""
+    cleaned = clean_text(text)
+    toks = [t for t in cleaned.split(' ') if t]
+    return toks
+
+
+def compute_live_token_attribution(text):
+    """LIME-style perturbation attribution on a single input text.
+
+    attribution(i) = 1 - cosine( e(text), e(text without token_i) )
+    """
+    tokens = tokenize_for_attribution(text)
+    if not tokens:
+        return []
+    if len(tokens) > 60:
+        tokens = tokens[:60]
+
+    original_text = ' '.join(tokens)
+    e_original = embedding_model.encode([original_text])[0]
+    e_original = normalize(np.array([e_original]))[0]
+
+    rows = []
+    for i, tok in enumerate(tokens):
+        masked_tokens = tokens[:i] + tokens[i+1:]
+        masked_text = ' '.join(masked_tokens).strip()
+        if not masked_text:
+            score = 1.0
+        else:
+            e_masked = embedding_model.encode([masked_text])[0]
+            e_masked = normalize(np.array([e_masked]))[0]
+            score = 1.0 - float(np.dot(e_original, e_masked))
+        rows.append({
+            'position': i,
+            'token': tok,
+            'attribution_score': round(float(score), 6)
+        })
+
+    rows.sort(key=lambda x: x['attribution_score'], reverse=True)
+    for rnk, row in enumerate(rows, start=1):
+        row['rank'] = rnk
+    rows.sort(key=lambda x: x['position'])
+    return rows
 
 # ============================================
 # STARTUP: LOAD OR BUILD MODEL
@@ -447,6 +493,44 @@ def get_attribution(topic_id):
         'interpretation': (
             'Token attribution measures how much removing each token changes the '
             'SBERT sentence embedding. Higher score means stronger contribution.'
+        )
+    })
+
+
+@app.route('/api/attribution_live', methods=['POST'])
+def get_live_attribution():
+    """Return token attribution for a user-provided input text.
+
+    Expects JSON: { "text": "..." }
+    Returns token-wise attribution scores for dynamic interpretability UI.
+    """
+    data = request.json or {}
+    text = str(data.get('text', '')).strip()
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+
+    rows = compute_live_token_attribution(text)
+    if not rows:
+        return jsonify({
+            'input_text': text,
+            'rows': [],
+            'top_tokens': [],
+            'count': 0
+        })
+
+    top_tokens = sorted(rows, key=lambda x: x['attribution_score'], reverse=True)[:5]
+    return jsonify({
+        'input_text': text,
+        'count': len(rows),
+        'rows': rows,
+        'top_tokens': [{
+            'token': t['token'],
+            'attribution_score': t['attribution_score'],
+            'rank': t['rank']
+        } for t in top_tokens],
+        'interpretation': (
+            'Dynamic token attribution for this input text: higher scores indicate '
+            'tokens whose removal causes larger SBERT embedding drift.'
         )
     })
 
