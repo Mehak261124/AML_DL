@@ -598,6 +598,12 @@ function InterpretabilityPage({ latestPrediction }) {
   const [liveTop, setLiveTop] = useState([]);
   const [liveLoading, setLiveLoading] = useState(false);
   const [liveError, setLiveError] = useState(null);
+  const [liveUpdatedAt, setLiveUpdatedAt] = useState(null);
+  const [apiBase, setApiBase] = useState(() => {
+    const saved = window.localStorage.getItem('aml_api_base');
+    return saved || API;
+  });
+  const onGithubPages = window.location.hostname.includes('github.io');
 
   useEffect(() => {
     let mounted = true;
@@ -605,17 +611,17 @@ function InterpretabilityPage({ latestPrediction }) {
       setLoading(true);
       setError(null);
       try {
-        const plotRes = await fetch(`${API}/plots/token_attribution.png`);
+        const plotRes = await fetch(`${apiBase}/plots/token_attribution.png`);
         if (!plotRes.ok) throw new Error('Could not load attribution heatmap');
         const plotJson = await plotRes.json();
 
-        const topicsRes = await fetch(`${API}/topics`);
+        const topicsRes = await fetch(`${apiBase}/topics`);
         if (!topicsRes.ok) throw new Error('Could not load topic list');
         const topicsJson = await topicsRes.json();
         const topTopics = (topicsJson.topics || []).slice(0, 3).map(t => t.id);
 
         const attrResponses = await Promise.all(
-          topTopics.map(tid => fetch(`${API}/attribution/${tid}`))
+          topTopics.map(tid => fetch(`${apiBase}/attribution/${tid}`))
         );
         const attrJson = await Promise.all(
           attrResponses.map(async r => (r.ok ? r.json() : { rows: [], top_tokens: [], topic_id: -1 }))
@@ -633,7 +639,7 @@ function InterpretabilityPage({ latestPrediction }) {
     };
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [apiBase]);
 
   const runLiveAttribution = async (inputText) => {
     const t = (inputText || liveText || '').trim();
@@ -646,7 +652,7 @@ function InterpretabilityPage({ latestPrediction }) {
     setLiveLoading(true);
     setLiveError(null);
     try {
-      const res = await fetch(`${API}/attribution_live`, {
+      const res = await fetch(`${apiBase}/attribution_live`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: t })
@@ -655,8 +661,9 @@ function InterpretabilityPage({ latestPrediction }) {
       const payload = await res.json();
       setLiveRows(payload.rows || []);
       setLiveTop(payload.top_tokens || []);
+      setLiveUpdatedAt(new Date().toLocaleTimeString());
     } catch (e) {
-      setLiveError('Could not compute live attribution. Ensure api_server.py is running.');
+      setLiveError(`Could not compute live attribution from ${apiBase}. Ensure api_server.py is running and reachable.`);
       setLiveRows([]);
       setLiveTop([]);
     } finally {
@@ -671,39 +678,80 @@ function InterpretabilityPage({ latestPrediction }) {
     }
   }, [latestPrediction]);
 
+  useEffect(() => {
+    const t = (liveText || '').trim();
+    if (t.length < 8) return;
+    const timer = setTimeout(() => {
+      runLiveAttribution(t);
+    }, 700);
+    return () => clearTimeout(timer);
+  }, [liveText, apiBase]);
+
   const maxScore = liveRows.length ? Math.max(...liveRows.map(r => Number(r.attribution_score) || 0), 1e-6) : 1;
+  const sortedLive = [...liveRows].sort((a, b) => (Number(b.attribution_score) || 0) - (Number(a.attribution_score) || 0));
 
   return (
     <div className="fade-up">
       <Section badge="DYNAMIC" title="Live Input Attribution"
-        subtitle="This plot updates for your current input text. Change text and click Generate to recompute token-level contributions.">
+        subtitle="This plot updates for your current input text. It auto-refreshes while typing and can also be recomputed manually.">
+        {onGithubPages && (
+          <div style={{ marginBottom:10, padding:10, borderRadius:8, background:'rgba(245,158,11,0.12)', border:'1px solid rgba(245,158,11,0.25)', fontSize:12, color:'#fde68a' }}>
+            GitHub Pages is static. Dynamic attribution needs a running Flask API. Set API URL below (default is local).
+          </div>
+        )}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 160px', gap:8, marginBottom:10 }}>
+          <input value={apiBase} onChange={e=>setApiBase(e.target.value)}
+            placeholder="API base URL"
+            style={{ width:'100%', height:36, padding:'0 10px', borderRadius:8, background:'var(--bg-input)', border:'1px solid var(--border)', color:'var(--text)', fontFamily:'Inter', fontSize:12, outline:'none' }} />
+          <button onClick={() => window.localStorage.setItem('aml_api_base', apiBase.trim())}
+            style={{ border:'none', borderRadius:8, background:'rgba(6,182,212,0.2)', color:'var(--cyan)', fontFamily:'Inter', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+            Save API URL
+          </button>
+        </div>
         <textarea value={liveText} onChange={e=>setLiveText(e.target.value)}
           placeholder="Paste text here (or use a prediction from Live Predict tab)..."
           style={{ width:'100%', minHeight:90, padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg-input)', border:'1px solid var(--border)', color:'var(--text)', fontFamily:'Inter', fontSize:14, resize:'vertical', outline:'none' }} />
         <div style={{ marginTop:12, marginBottom:14 }}>
           <button onClick={()=>runLiveAttribution()} disabled={liveLoading || !liveText.trim()}
             style={{ padding:'10px 18px', borderRadius:'var(--radius-sm)', border:'none', background:liveLoading?'var(--text-dim)':'var(--blue)', color:'#fff', fontFamily:'Inter', fontSize:13, fontWeight:600, cursor:liveLoading?'wait':'pointer' }}>
-            {liveLoading ? 'Computing...' : 'Generate Dynamic Plot'}
+            {liveLoading ? 'Computing...' : 'Recompute Attribution'}
           </button>
+          {liveUpdatedAt && (
+            <span style={{ marginLeft:10, fontSize:11, color:'var(--text-dim)' }}>Last updated: {liveUpdatedAt}</span>
+          )}
         </div>
         {liveError && <p style={{ fontSize:13, color:'var(--red)', marginBottom:10 }}>{liveError}</p>}
         {liveRows.length > 0 && (
           <div style={{ border:'1px solid var(--border)', borderRadius:'var(--radius-sm)', padding:12, background:'var(--bg)' }}>
-            <div style={{ display:'grid', gridTemplateColumns:`repeat(${Math.min(liveRows.length, 20)}, minmax(26px, 1fr))`, gap:6, overflowX:'auto', paddingBottom:4 }}>
+            <div style={{ fontSize:12, color:'var(--text-dim)', marginBottom:8 }}>Positional heat strip (left-to-right token order)</div>
+            <div style={{ display:'grid', gridTemplateColumns:`repeat(${Math.min(liveRows.length, 20)}, minmax(32px, 1fr))`, gap:6, overflowX:'auto', paddingBottom:4 }}>
               {liveRows.slice(0, 20).map((row, idx) => {
                 const score = Number(row.attribution_score) || 0;
                 const alpha = Math.min(1, Math.max(0.15, score / (maxScore || 1)));
                 return (
                   <div key={`${row.token}-${idx}`} title={`${row.token}: ${score.toFixed(4)}`}
-                    style={{ height:72, borderRadius:6, background:`rgba(16,185,129,${alpha})`, border:'1px solid rgba(16,185,129,0.2)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'4px 2px' }}>
-                    <span style={{ writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:10, color:'#d1fae5', letterSpacing:'0.02em' }}>{row.token}</span>
+                    style={{ height:76, borderRadius:6, background:`rgba(16,185,129,${alpha})`, border:'1px solid rgba(16,185,129,0.2)', display:'flex', alignItems:'center', justifyContent:'center', padding:'4px 2px' }}>
+                    <span style={{ fontSize:10, color:'#d1fae5', textAlign:'center', lineHeight:1.2 }}>{row.token}</span>
                   </div>
                 );
               })}
             </div>
-            <p style={{ fontSize:11, color:'var(--text-dim)', marginTop:8 }}>
-              Dynamic token attribution plot for current input (first 20 tokens shown). Darker cells indicate stronger contribution.
-            </p>
+            <div style={{ marginTop:12 }}>
+              <div style={{ fontSize:12, color:'var(--text-dim)', marginBottom:6 }}>Top token contribution bars</div>
+              {sortedLive.slice(0, 10).map((row, i) => {
+                const score = Number(row.attribution_score) || 0;
+                const widthPct = Math.max(4, (score / (maxScore || 1)) * 100);
+                return (
+                  <div key={`${row.token}-bar-${i}`} style={{ display:'grid', gridTemplateColumns:'140px 1fr 80px', gap:8, alignItems:'center', marginBottom:6 }}>
+                    <div style={{ fontSize:12, color:'var(--text)' }}>{row.token}</div>
+                    <div style={{ height:10, borderRadius:999, background:'rgba(255,255,255,0.08)', overflow:'hidden' }}>
+                      <div style={{ width:`${widthPct}%`, height:'100%', background:'linear-gradient(90deg,#06b6d4,#10b981)' }} />
+                    </div>
+                    <div style={{ fontSize:12, color:'var(--cyan)', textAlign:'right', fontWeight:600 }}>{score.toFixed(4)}</div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
         {liveTop.length > 0 && (
@@ -720,8 +768,8 @@ function InterpretabilityPage({ latestPrediction }) {
         )}
       </Section>
 
-      <Section badge="STEP 13" title="Embedding Interpretability — Token Attribution"
-        subtitle="Token attribution measures how much removing each word changes the SBERT embedding. High scores confirm the model attends to topically relevant terms.">
+      <Section badge="STEP 13 (STATIC)" title="Embedding Interpretability — Token Attribution (Corpus Baseline)"
+        subtitle="Precomputed corpus-level artifact from bert_model.py. Use the Dynamic section above for input-specific attribution changes.">
         <div style={{ padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg)', marginBottom:18, fontSize:13, color:'var(--text-muted)', lineHeight:1.8 }}>
           Token attribution measures how much removing each word changes the SBERT embedding. High scores confirm the model attends to topically relevant terms.
         </div>
