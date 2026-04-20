@@ -32,14 +32,14 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState } = React;
+const { useState, useEffect } = React;
 const API = 'http://localhost:5001/api';
 
 // ============ REUSABLE COMPONENTS ============
 
 function Nav({ active, onNav }) {
-  const tabs = ['overview','phase1','phase2','predict','compare'];
-  const labels = { overview:'Overview', phase1:'Phase 1: LDA', phase2:'Phase 2: BERTopic', predict:'Live Predict', compare:'Compare' };
+  const tabs = ['overview','phase1','phase2','predict','compare','interpretability'];
+  const labels = { overview:'Overview', phase1:'Phase 1: LDA', phase2:'Phase 2: BERTopic', predict:'Live Predict', compare:'Compare', interpretability:'Interpretability' };
   return (
     <nav style={{ position:'sticky', top:0, zIndex:100, background:'rgba(10,14,26,0.85)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', padding:'0 32px' }}>
       <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', alignItems:'center', height:64, gap:8 }}>
@@ -584,6 +584,101 @@ function ComparePage() {
   );
 }
 
+// ============ INTERPRETABILITY PAGE ============
+
+function InterpretabilityPage() {
+  const [heatmap, setHeatmap] = useState(null);
+  const [rowsByTopic, setRowsByTopic] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const plotRes = await fetch(`${API}/plots/token_attribution.png`);
+        if (!plotRes.ok) throw new Error('Could not load attribution heatmap');
+        const plotJson = await plotRes.json();
+
+        const topicsRes = await fetch(`${API}/topics`);
+        if (!topicsRes.ok) throw new Error('Could not load topic list');
+        const topicsJson = await topicsRes.json();
+        const topTopics = (topicsJson.topics || []).slice(0, 3).map(t => t.id);
+
+        const attrResponses = await Promise.all(
+          topTopics.map(tid => fetch(`${API}/attribution/${tid}`))
+        );
+        const attrJson = await Promise.all(
+          attrResponses.map(async r => (r.ok ? r.json() : { rows: [], top_tokens: [], topic_id: -1 }))
+        );
+
+        if (mounted) {
+          setHeatmap(`data:image/png;base64,${plotJson.image}`);
+          setRowsByTopic(attrJson);
+        }
+      } catch (e) {
+        if (mounted) setError('Could not load interpretability artifacts. Run: python3 bert_model.py and python3 api_server.py');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  return (
+    <div className="fade-up">
+      <Section badge="STEP 13" title="Embedding Interpretability — Token Attribution"
+        subtitle="Token attribution measures how much removing each word changes the SBERT embedding. High scores confirm the model attends to topically relevant terms.">
+        <div style={{ padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg)', marginBottom:18, fontSize:13, color:'var(--text-muted)', lineHeight:1.8 }}>
+          Token attribution measures how much removing each word changes the SBERT embedding. High scores confirm the model attends to topically relevant terms.
+        </div>
+        {loading && <p style={{ fontSize:13, color:'var(--text-dim)' }}>Loading interpretability outputs...</p>}
+        {error && <p style={{ fontSize:13, color:'var(--red)' }}>{error}</p>}
+        {!loading && !error && heatmap && (
+          <div style={{ marginBottom:20 }}>
+            <img src={heatmap} alt="Token attribution heatmap"
+              style={{ width:'100%', borderRadius:'var(--radius)', border:'1px solid var(--border)', boxShadow:'var(--shadow)' }} />
+            <p style={{ fontSize:12, color:'var(--text-dim)', marginTop:8 }}>
+              Token attribution heatmap (3 topics × 5 representative documents).
+            </p>
+          </div>
+        )}
+      </Section>
+
+      <Section badge="TOP TOKENS" title="Top-5 Attributed Tokens Per Topic">
+        <div style={{ overflowX:'auto' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+            <thead>
+              <tr>
+                {['Topic ID', 'Token', 'Mean Attribution Score'].map(h => (
+                  <th key={h} style={{ textAlign:'left', padding:'8px 10px', borderBottom:'1px solid var(--border)', color:'var(--text-dim)', fontWeight:600 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rowsByTopic.length === 0 && (
+                <tr><td colSpan="3" style={{ padding:'10px', color:'var(--text-dim)' }}>No attribution rows found.</td></tr>
+              )}
+              {rowsByTopic.map((topicObj, idx) => (
+                (topicObj.top_tokens || []).map((tk, jdx) => (
+                  <tr key={`${idx}-${jdx}`} style={{ background: (jdx % 2 === 0) ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
+                    <td style={{ padding:'8px 10px', color:'var(--text-muted)' }}>{topicObj.topic_id}</td>
+                    <td style={{ padding:'8px 10px', color:'var(--text)' }}>{tk.token}</td>
+                    <td style={{ padding:'8px 10px', color:'var(--cyan)', fontWeight:600 }}>{Number(tk.mean_attribution).toFixed(4)}</td>
+                  </tr>
+                ))
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
+    </div>
+  );
+}
+
 // ============ APP ============
 
 function App() {
@@ -597,6 +692,7 @@ function App() {
         {page==='phase2' && <Phase2Page />}
         {page==='predict' && <PredictPage />}
         {page==='compare' && <ComparePage />}
+        {page==='interpretability' && <InterpretabilityPage />}
       </main>
       <footer style={{ borderTop:'1px solid var(--border)', padding:'20px 28px', textAlign:'center' }}>
         <p style={{ fontSize:12, color:'var(--text-dim)' }}>Dynamic Trend & Event Detector · Mehak Jain & Anuj Kumar Singh · AML & DL 2025</p>

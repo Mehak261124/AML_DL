@@ -8,9 +8,9 @@ News_Category_Dataset_v3.json
 *.json
 
 # Generated output directories
-eda_plots/
-model_plots/
-bert_plots/
+# eda_plots
+# model_plots
+# bert_plots/
 
 # LaTeX intermediate build files (but keeping report.tex and report.pdf)
 *.aux
