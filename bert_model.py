@@ -1346,6 +1346,170 @@ for tid in top3_topics:
     print(f"  Topic {tid}: {token_str}")
 
 # ============================================
+# STEP 14 — ROBUSTNESS TESTING
+# ============================================
+# Two-part robustness analysis:
+#   (a) Gaussian noise injection on SBERT embeddings
+#       σ ∈ {0.01, 0.05, 0.10} — re-cluster with HDBSCAN and
+#       measure topic recovery rate vs clean run.
+#   (b) Bootstrap confidence intervals: resample 80% of docs
+#       20 times, refit UMAP+HDBSCAN, report mean ± std of
+#       topic count and average coherence.
+# ============================================
+
+print("\n" + "="*60)
+print("STEP 14 — ROBUSTNESS TESTING")
+print("(a) Noise injection on SBERT embeddings")
+print("(b) Bootstrap resampling for confidence intervals")
+print("="*60)
+
+robustness_results = {}
+
+# --- 14a: Noise Injection ---
+print("\n--- 14a: Gaussian Noise Injection ---")
+noise_levels = [0.01, 0.05, 0.10]
+clean_topics = set(df['bert_topic'].unique()) - {-1}
+n_clean_topics = len(clean_topics)
+
+noise_records = []
+for sigma in noise_levels:
+    noise = np.random.RandomState(42).normal(0, sigma, tpi_embeddings.shape)
+    noisy_embs = tpi_embeddings + noise.astype(np.float32)
+
+    umap_noisy = UMAP(n_neighbors=15, n_components=5, min_dist=0.0,
+                       metric='cosine', random_state=42, verbose=False)
+    reduced_noisy = umap_noisy.fit_transform(noisy_embs)
+
+    hdbscan_noisy = HDBSCAN(min_cluster_size=50, min_samples=10,
+                             metric='euclidean')
+    noisy_labels = hdbscan_noisy.fit_predict(reduced_noisy)
+    n_noisy_topics = len(set(noisy_labels)) - (1 if -1 in noisy_labels else 0)
+    noisy_outlier_rate = float((noisy_labels == -1).sum()) / len(noisy_labels)
+
+    # Topic recovery: fraction of clean topics whose documents
+    # still cluster together (>50% co-assignment)
+    recovery_count = 0
+    for t in clean_topics:
+        mask = (df['bert_topic'] == t).values
+        noisy_subset = noisy_labels[mask]
+        noisy_subset = noisy_subset[noisy_subset != -1]
+        if len(noisy_subset) == 0:
+            continue
+        dominant = np.bincount(noisy_subset).max()
+        if dominant / len(noisy_subset) > 0.5:
+            recovery_count += 1
+    recovery_rate = recovery_count / max(n_clean_topics, 1)
+
+    print(f"  σ={sigma:.2f}: {n_noisy_topics} topics, "
+          f"outlier rate={noisy_outlier_rate:.1%}, "
+          f"topic recovery={recovery_rate:.1%}")
+    noise_records.append({
+        'sigma': sigma, 'n_topics': n_noisy_topics,
+        'outlier_rate': round(noisy_outlier_rate, 4),
+        'recovery_rate': round(recovery_rate, 4)
+    })
+
+robustness_results['noise_injection'] = noise_records
+
+# --- 14b: Bootstrap Confidence Intervals ---
+print("\n--- 14b: Bootstrap Confidence Intervals (20 resamples, 80%) ---")
+n_bootstrap = 20
+sample_frac = 0.80
+boot_topic_counts = []
+boot_coherences = []
+
+for b in range(n_bootstrap):
+    rng = np.random.RandomState(b)
+    idx = rng.choice(len(docs), size=int(len(docs) * sample_frac), replace=False)
+    boot_embs = tpi_embeddings[idx]
+
+    umap_b = UMAP(n_neighbors=15, n_components=5, min_dist=0.0,
+                   metric='cosine', random_state=42, verbose=False)
+    red_b = umap_b.fit_transform(boot_embs)
+
+    hdb_b = HDBSCAN(min_cluster_size=50, min_samples=10, metric='euclidean')
+    labels_b = hdb_b.fit_predict(red_b)
+    n_b = len(set(labels_b)) - (1 if -1 in labels_b else 0)
+    boot_topic_counts.append(n_b)
+
+    # Quick coherence: mean intra-cluster cosine (sample up to 100 per cluster)
+    coh_scores = []
+    for t in set(labels_b):
+        if t == -1:
+            continue
+        t_idx = np.where(labels_b == t)[0]
+        if len(t_idx) < 2:
+            continue
+        sample_t = t_idx[:min(100, len(t_idx))]
+        sim = cosine_similarity(boot_embs[sample_t]).mean()
+        coh_scores.append(sim)
+    if coh_scores:
+        boot_coherences.append(float(np.mean(coh_scores)))
+
+    if (b + 1) % 5 == 0:
+        print(f"  Bootstrap {b+1}/{n_bootstrap}: {n_b} topics")
+
+tc_mean = float(np.mean(boot_topic_counts))
+tc_std  = float(np.std(boot_topic_counts))
+co_mean = float(np.mean(boot_coherences)) if boot_coherences else 0.0
+co_std  = float(np.std(boot_coherences)) if boot_coherences else 0.0
+
+print(f"\n  Topic count: {tc_mean:.1f} ± {tc_std:.1f}  (clean={n_clean_topics})")
+print(f"  Coherence:   {co_mean:.4f} ± {co_std:.4f}")
+
+robustness_results['bootstrap'] = {
+    'n_resamples': n_bootstrap,
+    'sample_fraction': sample_frac,
+    'topic_count_mean': round(tc_mean, 2),
+    'topic_count_std': round(tc_std, 2),
+    'coherence_mean': round(co_mean, 4),
+    'coherence_std': round(co_std, 4),
+    'clean_topic_count': n_clean_topics
+}
+
+# Save results
+with open('bert_plots/robustness_results.json', 'w') as f:
+    json.dump(robustness_results, f, indent=2)
+print("Saved: bert_plots/robustness_results.json")
+
+# Robustness summary plot
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+fig.suptitle('Step 14 — Robustness Testing', fontsize=14, fontweight='bold')
+
+# Panel 1: Noise injection
+ax = axes[0]
+sigmas = [r['sigma'] for r in noise_records]
+recoveries = [r['recovery_rate'] * 100 for r in noise_records]
+bars = ax.bar([f'σ={s}' for s in sigmas], recoveries,
+              color=['#2ecc71', '#e67e22', '#e74c3c'], alpha=0.85, width=0.5)
+ax.set_title('Noise Injection: Topic Recovery Rate', fontweight='bold')
+ax.set_ylabel('Recovery (%)')
+ax.set_ylim(0, 110)
+for bar, val in zip(bars, recoveries):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 1,
+            f'{val:.0f}%', ha='center', va='bottom', fontweight='bold')
+
+# Panel 2: Bootstrap topic count distribution
+ax2 = axes[1]
+ax2.hist(boot_topic_counts, bins=range(min(boot_topic_counts)-1,
+         max(boot_topic_counts)+3), color='#2196F3', alpha=0.8,
+         edgecolor='white', linewidth=1.2)
+ax2.axvline(n_clean_topics, color='red', linestyle='--', linewidth=2,
+            label=f'Clean run = {n_clean_topics}')
+ax2.axvline(tc_mean, color='navy', linestyle='-', linewidth=2,
+            label=f'Bootstrap mean = {tc_mean:.1f}')
+ax2.set_title('Bootstrap: Topic Count Distribution (20 resamples)',
+              fontweight='bold')
+ax2.set_xlabel('Number of Topics')
+ax2.set_ylabel('Frequency')
+ax2.legend(fontsize=9)
+
+plt.tight_layout()
+plt.savefig('bert_plots/robustness_noise.png', dpi=150, bbox_inches='tight')
+plt.close()
+print("Saved: bert_plots/robustness_noise.png")
+
+# ============================================
 # SUMMARY
 # ============================================
 
@@ -1378,6 +1542,8 @@ print(f"  tpi_effect.png                   — WITH vs WITHOUT TPI separation")
 print(f"  hard_negatives.csv               — Top-50 ambiguous outliers (HNM)")
 print(f"  token_attribution.csv            — Token attribution scores")
 print(f"  token_attribution.png            — Attribution heatmap (3 topics x 5 docs)")
+print(f"  robustness_results.json          — Noise injection + bootstrap CI results (NEW)")
+print(f"  robustness_noise.png             — Robustness summary plot (NEW)")
 print(f"\nPhase 2 pipeline: SBERT → TPI(32-d) → UMAP(5D) → HDBSCAN → reduce_outliers → c-TF-IDF")
 print(f"Key result: BERT resolves BoW conflation; 3-way ablation confirms SBERT")
 print(f"is the necessary component (UMAP+HDBSCAN alone cannot recover separation).")

@@ -36,8 +36,29 @@
 <div id="root"></div>
 <script type="text/babel">
 const { useState, useEffect } = React;
-const API = 'http://localhost:5001/api';
-const UI_BUILD = '2026-04-20-b3';
+// Environment-aware API endpoint: auto-detect local dev vs deployed
+const API = window.__API_ENDPOINT__
+  || ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5001/api'
+      : `${window.location.protocol}//${window.location.hostname}:5001/api`);
+const UI_BUILD = '2026-04-20-b4';
+
+// --- API Status Hook ---
+function useApiStatus() {
+  const [status, setStatus] = useState('checking');
+  useEffect(() => {
+    let mounted = true;
+    const check = () => {
+      fetch(`${API}/summary`, { signal: AbortSignal.timeout(3000) })
+        .then(r => { if (mounted) setStatus(r.ok ? 'online' : 'error'); })
+        .catch(() => { if (mounted) setStatus('offline'); });
+    };
+    check();
+    const id = setInterval(check, 15000);
+    return () => { mounted = false; clearInterval(id); };
+  }, []);
+  return status;
+}
 
 function tokenizeClient(text) {
   const cleaned = String(text || '')
@@ -107,9 +128,11 @@ function localAttribution(text, maxTokens = 50) {
 
 // ============ REUSABLE COMPONENTS ============
 
-function Nav({ active, onNav }) {
+function Nav({ active, onNav, apiStatus }) {
   const tabs = ['overview','phase1','phase2','predict','compare','interpretability'];
   const labels = { overview:'Overview', phase1:'Phase 1: LDA', phase2:'Phase 2: BERTopic', predict:'Live Predict', compare:'Compare', interpretability:'Interpretability' };
+  const statusColor = apiStatus === 'online' ? '#10b981' : apiStatus === 'checking' ? '#f59e0b' : '#ef4444';
+  const statusLabel = apiStatus === 'online' ? 'API Online' : apiStatus === 'checking' ? 'Checking...' : 'API Offline';
   return (
     <nav style={{ position:'sticky', top:0, zIndex:100, background:'rgba(10,14,26,0.85)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', padding:'0 32px' }}>
       <div style={{ maxWidth:1280, margin:'0 auto', display:'flex', alignItems:'center', height:64, gap:8 }}>
@@ -118,7 +141,16 @@ function Nav({ active, onNav }) {
         {tabs.map(t=>(
           <button key={t} onClick={()=>onNav(t)} style={{ padding:'8px 16px', borderRadius:8, border:'none', cursor:'pointer', background:active===t?'var(--blue)':'transparent', color:active===t?'#fff':'var(--text-muted)', fontFamily:'Inter', fontSize:13, fontWeight:500, transition:'all 0.2s' }}>{labels[t]}</button>
         ))}
+        <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ display:'inline-block', width:8, height:8, borderRadius:'50%', background:statusColor, boxShadow:`0 0 6px ${statusColor}` }} />
+          <span style={{ fontSize:11, color:statusColor, fontWeight:500 }}>{statusLabel}</span>
+        </div>
       </div>
+      {apiStatus === 'offline' && (
+        <div style={{ background:'rgba(239,68,68,0.12)', borderTop:'1px solid rgba(239,68,68,0.25)', padding:'8px 32px', fontSize:12, color:'#fca5a5', textAlign:'center' }}>
+          ⚠ Backend not reachable at <code style={{color:'#fcd34d'}}>{API}</code>. Start the server: <code style={{color:'#fcd34d'}}>python api_server.py</code> — or set <code style={{color:'#fcd34d'}}>window.__API_ENDPOINT__</code> for remote deployment.
+        </div>
+      )}
     </nav>
   );
 }
@@ -913,9 +945,10 @@ function InterpretabilityPage({ latestPrediction }) {
 function App() {
   const [page, setPage] = useState('overview');
   const [latestPrediction, setLatestPrediction] = useState(null);
+  const apiStatus = useApiStatus();
   return (
     <div>
-      <Nav active={page} onNav={setPage} />
+      <Nav active={page} onNav={setPage} apiStatus={apiStatus} />
       <main style={{ maxWidth:1280, margin:'0 auto', padding:'28px 28px 60px' }}>
         {page==='overview' && <OverviewPage />}
         {page==='phase1' && <Phase1Page />}

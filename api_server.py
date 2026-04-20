@@ -42,6 +42,16 @@ import re
 import base64
 import pickle
 
+# ============================================
+# GUNICORN / MULTI-PROCESS SAFETY
+# With preload=True (set in entrypoint.sh), the model is loaded
+# once in the master process and forked to workers — no duplicate
+# loading. TOKENIZERS_PARALLELISM=false prevents HuggingFace
+# tokenizer deadlocks in forked workers.
+# ============================================
+import os
+os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
+
 app   = Flask(__name__)
 CORS(app)
 

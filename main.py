@@ -27,7 +27,17 @@ import seaborn as sns
 import json
 import os
 import warnings
+import argparse
+import sys
 warnings.filterwarnings('ignore')
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--phase', choices=['eda', 'lda', 'bert', 'all'], default='all')
+args = parser.parse_args()
+
+if args.phase not in ('eda', 'all'):
+    print(f"Skipping EDA in main.py for phase='{args.phase}'.")
+    sys.exit(0)
 
 os.makedirs('eda_plots', exist_ok=True)
 print("EDA plots will be saved to: eda_plots/")
