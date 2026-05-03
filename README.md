@@ -5,8 +5,6 @@ How do you distinguish a fleeting social media meme from a significant real-worl
 
 This project builds a **Dynamic Trend & Event Detector** that monitors news streams, groups articles into topics, tracks how fast each topic is growing over time (semantic velocity), and verifies detected trends against real-world news sources (GDELT).
 
----
-
 ## Key Results
 
 | Metric | Value |
@@ -17,8 +15,6 @@ This project builds a **Dynamic Trend & Event Detector** that monitors news stre
 | Trump & President topic peak growth | 278% in 2014 |
 | COVID-19 topic detected | Automatically in 2020 |
 | Weighted LDA Confidence | 0.6103 |
-
----
 
 ## Project Structure
 
@@ -41,8 +37,6 @@ AML_DL/
 └── News_Category_Dataset_v3.json  ← Dataset (download separately)
 ```
 
----
-
 ## Setup Instructions
 
 ### Step 1 — Clone the Repository
@@ -51,8 +45,6 @@ AML_DL/
 git clone https://github.com/YOUR_USERNAME/AML_DL.git
 cd AML_DL
 ```
-
----
 
 ### Step 2 — Create Python Virtual Environment
 
@@ -70,8 +62,6 @@ venv\Scripts\activate
 
 You should see `(venv)` appear in your terminal.
 
----
-
 ### Step 3 — Install Dependencies
 
 ```bash
@@ -82,8 +72,6 @@ pip install -r requirements.txt
 This installs all required packages including pandas, scikit-learn, BERTopic, sentence-transformers, UMAP, and HDBSCAN.
 
 > **Note:** Installation takes 5–10 minutes due to large ML packages.
-
----
 
 ### Step 4 — Download the Dataset
 
@@ -135,8 +123,6 @@ ls -lh News_Category_Dataset_v3.json
 3. Unzip the file
 4. Place `News_Category_Dataset_v3.json` in the `AML_DL/` folder
 
----
-
 ### Step 5 — Verify Setup
 
 ```bash
@@ -146,8 +132,6 @@ python3 --version
 # Check key packages installed
 python3 -c "import pandas; import sklearn; import bertopic; print('All packages OK')"
 ```
-
----
 
 ## Running the Project
 
@@ -184,8 +168,6 @@ PHASE 1 - DATA LOADING & EDA COMPLETE
 | `eda_overview.png` | 4-panel overview: articles over time, categories, word count, yearly distribution |
 | `velocity_preview.png` | Monthly growth velocity with smoothing |
 | `category_velocity.png` | Per-category growth trends (quarterly) |
-
----
 
 ### Run 2 — LDA Modeling Pipeline (`lda_model.py`)
 
@@ -234,8 +216,6 @@ PHASE 1 - LDA MODELING COMPLETE
 | `lda_topic_evolution.png` | Topic growth over time 2012–2022 |
 | `semantic_velocity.png` | Peak growth rate per topic with year annotation |
 
----
-
 ## Approach & Methodology
 
 ### Phase 1 — Advanced ML (This Repository)
@@ -283,8 +263,6 @@ Interactive React UI + Flask API
 - Context separation ✅ — ACA legal ≠ COVID pandemic
 - SBERT cosine similarity: 0.27 (vs BoW ~0.8+)
 
----
-
 ## Novel Feature Engineering
 
 Three novel features were engineered to address LDA's static corpus assumption:
@@ -304,8 +282,6 @@ richness = unique_words / (total_words + 1)
 ```
 Measures semantic density. Topically rich articles contribute more meaningful signal to LDA.
 
----
-
 ## Key Findings
 
 **Finding 1 — Politics dominates (2012–2022)**
@@ -319,8 +295,6 @@ Corresponding exactly to the US presidential campaign period.
 
 **Finding 4 — Failure Analysis — COVID/Court conflation**
 The covid/court topic shows peak velocity in 2014, predating COVID-19. This occurs because LDA's bag-of-words assumption conflates legal news (court, state, health) with pandemic news — same vocabulary, different semantics. This motivates Phase 2's SBERT approach.
-
----
 
 ## Tech Stack
 
@@ -336,8 +310,6 @@ The covid/court topic shows peak velocity in 2014, predating COVID-19. This occu
 | `hdbscan` | Phase 2 — density-based clustering |
 | `kaggle` | Dataset download |
 
----
-
 ## Dataset
 
 **HuffPost News Category Dataset**
@@ -348,8 +320,6 @@ The covid/court topic shows peak velocity in 2014, predating COVID-19. This occu
 - Citation: Misra, R. (2022). News Category Dataset.
 
 > The full dataset (8.8GB) is identified for future GPU-enabled experiments. Current methodology is designed to scale directly to the full dataset without architectural changes.
-
----
 
 ## References
 
