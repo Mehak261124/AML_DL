@@ -1,331 +1,132 @@
 # Dynamic Trend & Event Detector
-## Problem Statement
 
-How do you distinguish a fleeting social media meme from a significant real-world news event — automatically, in real time?
+A machine learning system that monitors news streams, discovers emerging topic clusters, tracks how fast each topic is growing, and verifies whether detected trends are real-world events or just noise.
 
-This project builds a **Dynamic Trend & Event Detector** that monitors news streams, groups articles into topics, tracks how fast each topic is growing over time (semantic velocity), and verifies detected trends against real-world news sources (GDELT).
+Built by **Mehak Jain (230079)** and **Anuj Kumar Singh (230073)** as part of the Advanced Machine Learning & Deep Learning course, 2025.
 
-## Key Results
+## The Problem
+
+Every day thousands of topics trend online. Most disappear within hours. A few — pandemics, elections, wars — are real events that matter. The question is: how do you tell them apart automatically?
+
+The core challenge: LDA placed the COVID-19 topic peak in **2014** — six years before the pandemic — because it shares vocabulary with 2014 ACA legal news. BERTopic with SBERT embeddings corrects this to **2020** by encoding sentence meaning rather than just word counts.
+
+## Results
 
 | Metric | Value |
-|---|---|
-| Dataset | HuffPost News (2012–2022) |
-| Articles Processed | 11,000 (balanced across 11 years) |
-| Topics Discovered | 10 (fully unsupervised) |
-| Trump & President topic peak growth | 278% in 2014 |
-| COVID-19 topic detected | Automatically in 2020 |
-| Weighted LDA Confidence | 0.6103 |
+|--------|-------|
+| Articles processed | 11,000 (1,000/year, 2012–2022) |
+| Topics discovered | 14 (fully unsupervised) |
+| COVID-19 peak — LDA | 2014 ✗ |
+| COVID-19 peak — BERTopic | 2020 ✓ |
+| COVID-19 velocity | +1,036% year-on-year |
+| ACA vs COVID similarity (BoW) | ~0.80 (conflated) |
+| ACA vs COVID similarity (SBERT) | 0.079 (separated) |
+| Real events confirmed | 9 (GDELT + GBM verified) |
 
 ## Project Structure
 
 ```
 AML_DL/
-├── eda_plots/                  ← EDA visualizations
-│   ├── eda_overview.png
-│   ├── velocity_preview.png
-│   └── category_velocity.png
-├── model_plots/                ← Model results & feature plots
-│   ├── baseline_tfidf.png
-│   ├── feature_engineering.png
-│   ├── confidence_comparison.png
-│   ├── lda_topics.png
-│   ├── lda_topic_evolution.png
-│   └── semantic_velocity.png
-├── main.py                     ← EDA pipeline
-├── lda_model.py                ← LDA modeling pipeline
-├── requirements.txt            ← All dependencies
-└── News_Category_Dataset_v3.json  ← Dataset (download separately)
+├── src/
+│   ├── eda_pipeline.py         ← EDA and data exploration
+│   ├── lda_pipeline.py         ← Phase 1: LDA topic modeling
+│   ├── bertopic_pipeline.py    ← Phase 2: BERTopic + SBERT + TPI
+│   ├── event_detector.py       ← Phase 3: signal classification + GDELT
+│   └── app.py                  ← Flask REST API (port 8000)
+├── tests/
+│   └── test_suite.py           ← Unit tests
+├── docs/
+│   ├── report.pdf
+│   └── report.tex
+├── bert_plots/                 ← Generated outputs + model cache
+├── model_plots/                ← Generated LDA plots
+├── eda_plots/                  ← Generated EDA plots
+├── index.html                  ← Interactive UI (React, no build step)
+├── requirements.txt
+└── README.md
 ```
 
-## Setup Instructions
+## Setup
 
-### Step 1 — Clone the Repository
+**Step 1 — Clone and install**
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/AML_DL.git
+git clone https://github.com/Mehak261124/AML_DL.git
 cd AML_DL
-```
-
-### Step 2 — Create Python Virtual Environment
-
-```bash
-# Create virtual environment
 python3 -m venv venv
-
-# Activate it
-# Mac/Linux:
 source venv/bin/activate
-
-# Windows:
-venv\Scripts\activate
-```
-
-You should see `(venv)` appear in your terminal.
-
-### Step 3 — Install Dependencies
-
-```bash
-pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-This installs all required packages including pandas, scikit-learn, BERTopic, sentence-transformers, UMAP, and HDBSCAN.
+**Step 2 — Download the dataset**
 
-> **Note:** Installation takes 5–10 minutes due to large ML packages.
+This project uses the [HuffPost News Category Dataset](https://www.kaggle.com/datasets/rmisra/news-category-dataset) from Kaggle.
 
-### Step 4 — Download the Dataset
-
-This project uses the **HuffPost News Category Dataset** from Kaggle.
-
-#### Option A — Kaggle API (Recommended)
-
-**4a. Get your Kaggle API key:**
-1. Go to [kaggle.com](https://kaggle.com) → Profile → Account
-2. Scroll to **API** section → Click **"Create New Token"**
-3. A file `kaggle.json` downloads automatically
-
-**4b. Place the API key:**
-```bash
-# Mac/Linux
-mkdir -p ~/.kaggle
-cp ~/Downloads/kaggle.json ~/.kaggle/
-chmod 600 ~/.kaggle/kaggle.json
-
-# Windows
-mkdir %USERPROFILE%\.kaggle
-copy kaggle.json %USERPROFILE%\.kaggle\
-```
-
-**4c. Download the dataset:**
 ```bash
 kaggle datasets download -d rmisra/news-category-dataset
-```
-
-**4d. Unzip the dataset:**
-```bash
-# Mac/Linux
 unzip news-category-dataset.zip
-
-# Windows
-tar -xf news-category-dataset.zip
 ```
 
-**4e. Verify the file exists:**
-```bash
-ls -lh News_Category_Dataset_v3.json
-# Should show ~83MB file
-```
+Or download manually and place `News_Category_Dataset_v3.json` in the project root.
 
-#### Option B — Manual Download
+## Running
 
-1. Go to: [https://www.kaggle.com/datasets/rmisra/news-category-dataset](https://www.kaggle.com/datasets/rmisra/news-category-dataset)
-2. Click **Download**
-3. Unzip the file
-4. Place `News_Category_Dataset_v3.json` in the `AML_DL/` folder
-
-### Step 5 — Verify Setup
+Run the phases in order. After the first full run, only `app.py` needs to be restarted.
 
 ```bash
-# Check Python version (need 3.8+)
-python3 --version
+# Phase 1 — Exploratory analysis (~30 seconds)
+python3 src/eda_pipeline.py
 
-# Check key packages installed
-python3 -c "import pandas; import sklearn; import bertopic; print('All packages OK')"
+# Phase 1 — LDA modeling (~3-5 minutes)
+python3 src/lda_pipeline.py
+
+# Phase 2 — BERTopic (run once, ~8-10 minutes, saves cache)
+python3 src/bertopic_pipeline.py
+
+# Phase 3 — Signal classification + GDELT verification (~2-3 minutes)
+python3 src/event_detector.py
+
+# API server — loads from cache, ready in ~30 seconds
+python3 src/app.py
 ```
 
-## Running the Project
+Open `http://localhost:8000` in your browser.
 
-### Run 1 — EDA Pipeline (`main.py`)
+## Live Predict
 
-**What it does:**
-- Loads and cleans 11,000 articles (1,000 per year, 2012–2022)
-- Generates 3 EDA visualizations saved to `eda_plots/`
-- Shows article distribution, top categories, word count distribution
-- Calculates monthly growth velocity per category
+The UI has seven pages. The **Live Predict** tab takes any news headline and returns the predicted topic, confidence score, top 3 candidate topics, a real/fake event verdict, and the five most similar articles from the corpus.
+
+Headlines about topics outside the training corpus (AI research, climate policy, sports) return **No Matching Topic Found** with an UNCERTAIN verdict rather than a wrong answer.
 
 ```bash
-python3 main.py
+curl -X POST http://localhost:8000/api/predict \
+  -H "Content-Type: application/json" \
+  -d '{"text": "COVID-19 vaccine rollout begins across the country"}'
 ```
 
-**Expected output:**
-```
-Plots will be saved to: eda_plots/
-Loading dataset...
-Years covered: [2012, 2013, 2014, ..., 2022]
-Total articles: 11000
-Saved: eda_plots/eda_overview.png
-Saved: eda_plots/velocity_preview.png
-Saved: eda_plots/category_velocity.png
-PHASE 1 - DATA LOADING & EDA COMPLETE
-```
+## How It Works
 
-**Expected runtime:** ~30 seconds
+**Phase 1 — LDA baseline**
+TF-IDF vectorization followed by LDA with three novel temporal features: logarithmic recency weight, category velocity score, and text richness ratio. Establishes the bag-of-words conflation problem as motivation for Phase 2.
 
-**Output plots:**
+**Phase 2 — BERTopic**
+SBERT (all-MiniLM-L6-v2, 384-dim) encodes full sentence meaning. We introduce **Temporal Positional Injection (TPI)** — a novel contribution that appends 32-dim sinusoidal time encodings to each embedding before manifold learning, improving the ACA-COVID separation gap from 0.157 to 0.184. The full pipeline: SBERT → TPI (416-dim) → SVD (50-dim) → UMAP (5-dim) → HDBSCAN → c-TF-IDF.
 
-| Plot | Description |
-|---|---|
-| `eda_overview.png` | 4-panel overview: articles over time, categories, word count, yearly distribution |
-| `velocity_preview.png` | Monthly growth velocity with smoothing |
-| `category_velocity.png` | Per-category growth trends (quarterly) |
+**Phase 3 — Event detection**
+BERTrend popularity metric classifies each topic-year as NOISE, WEAK, STRONG, or EMERGING. EMERGING events are cross-verified against GDELT DOC 2.0. A GBM classifier trained on topic coherence, purity, log-size, and velocity provides a P(real event) probability score for every prediction.
 
-### Run 2 — LDA Modeling Pipeline (`lda_model.py`)
-
-**What it does:**
-- Runs TF-IDF baseline topic extraction
-- Fits LDA with 10 topics on count vectors
-- Applies 3 novel feature engineering techniques
-- Compares standard vs temporally-weighted LDA
-- Performs temporal topic tracking and semantic velocity analysis
-- Runs failure analysis on the COVID/Court topic conflation
+## Tests
 
 ```bash
-python3 lda_model.py
+python -m pytest tests/test_suite.py -v
 ```
 
-**Expected output:**
-```
-Plots will be saved to: model_plots/
-Loading data...
-Total documents: 11000
---- BASELINE: TF-IDF Frequency Extraction ---
-Vocabulary size: 5000
---- ADVANCED ML: LDA Topic Modeling ---
-Fitting LDA with 10 topics...
-LDA fitting complete!
---- LDA Discovered Topics ---
-Topic  0: news | said | fox | ukraine | war ...
-Topic  7: trump | president | donald | trumps ...
-Topic  8: covid | court | coronavirus | state ...
-FEATURE ENGINEERING — NOVEL CONTRIBUTIONS
-Standard LDA avg confidence:        0.6104
-Temporally-Weighted LDA confidence: 0.6103
-PHASE 1 - LDA MODELING COMPLETE
-```
-
-**Expected runtime:** 3–5 minutes (LDA fitting is compute-intensive)
-
-**Output plots:**
-
-| Plot | Description |
-|---|---|
-| `baseline_tfidf.png` | Top 20 words by TF-IDF score |
-| `feature_engineering.png` | 3 novel features: temporal weight, category velocity, text richness |
-| `confidence_comparison.png` | Standard LDA vs Temporally-Weighted LDA |
-| `lda_topics.png` | Top words per topic (all 10 topics) |
-| `lda_topic_evolution.png` | Topic growth over time 2012–2022 |
-| `semantic_velocity.png` | Peak growth rate per topic with year annotation |
-
-## Approach & Methodology
-
-### Phase 1 — Advanced ML (This Repository)
-
-```
-Raw Text
-    ↓
-Text Cleaning (lowercase, remove punctuation)
-    ↓
-Baseline: TF-IDF Vectorization
-    ↓
-Advanced ML: LDA Topic Modeling (10 topics)
-    ↓
-Novel Feature Engineering:
-  • Temporal Weight (log recency)
-  • Category Velocity Score
-  • Text Richness Ratio
-    ↓
-Temporally-Weighted LDA
-    ↓
-Semantic Velocity Calculation
-    ↓
-Failure Analysis
-```
-
-### Phase 2 — Deep Learning (Implemented)
-
-```
-SBERT Embeddings (all-MiniLM-L6-v2, 384-dim)
-    ↓
-UMAP Dimensionality Reduction (384 → 5 dim)
-    ↓
-HDBSCAN Density Clustering (auto topic count)
-    ↓
-c-TF-IDF Topic Representation
-    ↓
-Context Separation Analysis
-    ↓
-Interactive React UI + Flask API
-```
-
-**Key Results:**
-- 15 topics discovered (auto, vs LDA's fixed 10)
-- COVID-19 topic correctly peaks in 2020 (1,036% velocity)
-- Context separation ✅ — ACA legal ≠ COVID pandemic
-- SBERT cosine similarity: 0.27 (vs BoW ~0.8+)
-
-## Novel Feature Engineering
-
-Three novel features were engineered to address LDA's static corpus assumption:
-
-**Feature 1 — Temporal Weight**
-```
-w(t) = log(1 + days_since_start) / max(log(1 + days_since_start))
-```
-Assigns higher weight to recent documents. Addresses LDA's core limitation of treating all documents as temporally equivalent.
-
-**Feature 2 — Category Velocity Score**
-Captures the growth rate of an article's category at the time of publication. Articles published during topic surges carry stronger trend signal.
-
-**Feature 3 — Text Richness Ratio**
-```
-richness = unique_words / (total_words + 1)
-```
-Measures semantic density. Topically rich articles contribute more meaningful signal to LDA.
-
-## Key Findings
-
-**Finding 1 — Politics dominates (2012–2022)**
-TF-IDF identifies "trump" as the highest scoring term across the entire corpus, reflecting US political dominance in news coverage.
-
-**Finding 2 — LDA discovers COVID-19 unsupervised**
-LDA automatically identifies a covid/court/coronavirus topic cluster without any labeling — demonstrating the model's ability to detect real-world events.
-
-**Finding 3 — Trump topic grows 278% from 2013–2016**
-Corresponding exactly to the US presidential campaign period.
-
-**Finding 4 — Failure Analysis — COVID/Court conflation**
-The covid/court topic shows peak velocity in 2014, predating COVID-19. This occurs because LDA's bag-of-words assumption conflates legal news (court, state, health) with pandemic news — same vocabulary, different semantics. This motivates Phase 2's SBERT approach.
+Covers text cleaning, feature engineering, TPI encoding, BoW similarity, GBM verdict mapping, and API route definitions. Tests requiring a trained model skip automatically if the cache is absent.
 
 ## Tech Stack
 
-| Tool | Purpose |
-|---|---|
-| `pandas` | Data loading and manipulation |
-| `scikit-learn` | TF-IDF, LDA, CountVectorizer |
-| `matplotlib / seaborn` | Visualizations |
-| `scipy` | Sparse matrix operations for temporal weighting |
-| `BERTopic` | Phase 2 — deep learning topic modeling |
-| `sentence-transformers` | Phase 2 — SBERT embeddings |
-| `umap-learn` | Phase 2 — dimensionality reduction |
-| `hdbscan` | Phase 2 — density-based clustering |
-| `kaggle` | Dataset download |
-
-## Dataset
-
-**HuffPost News Category Dataset**
-- Source: Kaggle — [rmisra/news-category-dataset](https://www.kaggle.com/datasets/rmisra/news-category-dataset)
-- Size: 210,000+ articles (full), 11,000 used (balanced subset)
-- Date range: 2012–2022
-- Categories: 42 news categories
-- Citation: Misra, R. (2022). News Category Dataset.
-
-> The full dataset (8.8GB) is identified for future GPU-enabled experiments. Current methodology is designed to scale directly to the full dataset without architectural changes.
+`sentence-transformers` · `bertopic` · `umap-learn` · `hdbscan` · `scikit-learn` · `flask` · `pandas` · `numpy` · `matplotlib` · React 18
 
 ## References
 
-- Blei, D., Ng, A., & Jordan, M. (2003). Latent Dirichlet Allocation. *JMLR*, 3, 993–1022.
-- Grootendorst, M. (2022). BERTopic: Neural topic modeling with a class-based TF-IDF procedure. *arXiv:2203.05794*.
-- Reimers, N., & Gurevych, I. (2019). Sentence-BERT. *EMNLP 2019*.
-- McInnes, L., et al. (2018). UMAP: Uniform Manifold Approximation and Projection. *arXiv:1802.03426*.
-- Misra, R. (2022). News Category Dataset. *Kaggle*.
-- Allan, J., et al. (1998). Topic Detection and Tracking Pilot Study. *DARPA*.
+Blei et al. (2003) · Grootendorst (2022) · Reimers & Gurevych (2019) · McInnes et al. (2018) · Campello et al. (2013) · Vaswani et al. (2017) · Boutaleb et al. (2024) · Leetaru & Schrodt (2013)

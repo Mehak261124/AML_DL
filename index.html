@@ -281,30 +281,37 @@
         h('p', { style: { fontSize:18, color:'var(--text-muted)', marginTop:12 } }, 'Emerging Topic Detection & News Correlation using Neural Topic Modeling'),
         h('p', { style: { fontSize:13, color:'var(--text-dim)', marginTop:6 } }, 'Mehak Jain (230079) \u00b7 Anuj Kumar Singh (230073)')
       ),
+
       h('div', { style: { display:'flex', gap:14, flexWrap:'wrap', marginBottom:32 } },
         h(StatCard, { value:'11K', label:'Articles', color:'var(--blue)' }),
-        h(StatCard, { value:'15', label:'Topics (BERT)', color:'var(--cyan)' }),
+        h(StatCard, { value:'14', label:'Topics (BERT)', color:'var(--cyan)' }),
         h(StatCard, { value:'1036%', label:'COVID Velocity', color:'var(--red)' }),
         h(StatCard, { value:'\u2705', label:'Context Separated', color:'var(--green)' })
       ),
+
       h(Section, { badge:'THE PROBLEM', title:'Real Events vs Internet Noise' },
         h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 } },
           h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(16,185,129,0.06)', border:'1px solid rgba(16,185,129,0.12)' } },
             h('div', { style: { fontWeight:700, color:'var(--green)', marginBottom:10, fontSize:13 } }, '\u2713 REAL EVENT'),
             h('ul', { style: { color:'var(--text-muted)', fontSize:13, lineHeight:2, paddingLeft:18 } },
-              h('li', null, 'Sustained multi-day media coverage'), h('li', null, 'Accelerating article velocity'),
-              h('li', null, 'Multiple independent sources'), h('li', null, 'Verifiable in GDELT database')
+              h('li', null, 'Sustained multi-day media coverage'),
+              h('li', null, 'Accelerating article velocity'),
+              h('li', null, 'Multiple independent sources'),
+              h('li', null, 'Verifiable in GDELT database')
             )
           ),
           h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.12)' } },
             h('div', { style: { fontWeight:700, color:'var(--red)', marginBottom:10, fontSize:13 } }, '\u2717 INTERNET NOISE'),
             h('ul', { style: { color:'var(--text-muted)', fontSize:13, lineHeight:2, paddingLeft:18 } },
-              h('li', null, 'Peaks and dies within hours'), h('li', null, 'Confined to single platform'),
-              h('li', null, 'No mainstream coverage'), h('li', null, 'Absent from GDELT')
+              h('li', null, 'Peaks and dies within hours'),
+              h('li', null, 'Confined to single platform'),
+              h('li', null, 'No mainstream coverage'),
+              h('li', null, 'Absent from GDELT')
             )
           )
         )
       ),
+
       h(Section, { badge:'PIPELINE', title:'Two-Phase Architecture' },
         h('div', { style: { display:'grid', gridTemplateColumns:'1fr 40px 1fr', alignItems:'center', gap:16 } },
           h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.12)' } },
@@ -319,11 +326,81 @@
           h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(59,130,246,0.06)', border:'1px solid rgba(59,130,246,0.12)' } },
             h('div', { style: { fontWeight:700, color:'var(--blue)', fontSize:13, marginBottom:8 } }, 'PHASE 2 \u2014 BERTopic (Deep Learning)'),
             h('div', { style: { fontSize:12, color:'var(--text-muted)', lineHeight:1.8 } },
-              'SBERT (384-dim) \u2192 UMAP (5-dim) \u2192 HDBSCAN', h('br', null),
+              'SBERT (384-dim) \u2192 TPI (+32) \u2192 SVD (50) \u2192 UMAP (5-dim) \u2192 HDBSCAN', h('br', null),
               '\u2192 c-TF-IDF topic representation', h('br', null),
               h('span', { style: { color:'var(--green)' } }, '\u2705 Context-aware separation')
             )
           )
+        )
+      ),
+
+      h(Section, { badge:'ARCHITECTURE', title:'Full Pipeline Architecture' },
+        h('p', { style: { fontSize:14, color:'var(--text-muted)', lineHeight:1.6, marginBottom:20 } },
+          'End-to-end flow from raw HuffPost articles through EDA, LDA baseline, BERTopic neural pipeline, Phase 3 event detection, and the live Flask API + React UI. The red node marks LDA\'s failure (COVID peak 2014); the green node marks BERTopic\'s correction (COVID peak 2020).'
+        ),
+        h('div', { style: { textAlign:'center' } },
+          h('img', {
+            src: 'Architecture.png',
+            alt: 'Full Pipeline Architecture Diagram',
+            style: {
+              maxWidth: '100%',
+              borderRadius: 'var(--radius)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow)'
+            }
+          }),
+          h('p', { style: { fontSize:12, color:'var(--text-dim)', marginTop:8 } },
+            'Dataset \u2192 EDA \u2192 LDA (Phase 1) \u2192 BERTopic (Phase 2) \u2192 Event Detection (Phase 3) \u2192 Flask API :8000 \u2192 React UI'
+          )
+        )
+      ),
+
+      h(Section, { badge:'KEY FINDING', title:'The COVID Conflation Problem \u2014 Solved' },
+        h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 } },
+          h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.2)', textAlign:'center' } },
+            h('div', { style: { fontSize:11, color:'var(--red)', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8 } }, 'Phase 1 \u2014 LDA'),
+            h('div', { style: { fontSize:42, fontWeight:800, color:'var(--red)', letterSpacing:'-0.02em' } }, '2014'),
+            h('div', { style: { fontSize:13, color:'var(--text-muted)', marginTop:6 } }, 'COVID-19 topic peak'),
+            h('div', { style: { fontSize:12, color:'var(--text-dim)', marginTop:4 } }, 'Bag-of-words conflates ACA legal news\nwith pandemic vocabulary')
+          ),
+          h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(16,185,129,0.06)', border:'1px solid rgba(16,185,129,0.2)', textAlign:'center' } },
+            h('div', { style: { fontSize:11, color:'var(--green)', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:8 } }, 'Phase 2 \u2014 BERTopic'),
+            h('div', { style: { fontSize:42, fontWeight:800, color:'var(--green)', letterSpacing:'-0.02em' } }, '2020'),
+            h('div', { style: { fontSize:13, color:'var(--text-muted)', marginTop:6 } }, 'COVID-19 topic peak'),
+            h('div', { style: { fontSize:12, color:'var(--text-dim)', marginTop:4 } }, 'SBERT encodes full sentence meaning \u2014 6-year correction')
+          )
+        ),
+        h('div', { style: { marginTop:16, padding:16, borderRadius:'var(--radius-sm)', background:'var(--bg)', display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 } },
+          h('div', null,
+            h('div', { style: { fontSize:12, color:'var(--text-dim)', marginBottom:4 } }, 'ACA vs COVID cosine similarity \u2014 BoW'),
+            h('div', { style: { fontSize:22, fontWeight:800, color:'var(--red)' } }, '~0.80 ', h('span', { style: { fontSize:11, fontWeight:400, color:'var(--text-dim)' } }, '(conflated)'))
+          ),
+          h('div', null,
+            h('div', { style: { fontSize:12, color:'var(--text-dim)', marginBottom:4 } }, 'ACA vs COVID cosine similarity \u2014 SBERT'),
+            h('div', { style: { fontSize:22, fontWeight:800, color:'var(--green)' } }, '0.079 ', h('span', { style: { fontSize:11, fontWeight:400, color:'var(--text-dim)' } }, '(separated)'))
+          )
+        )
+      ),
+
+      h(Section, { badge:'PHASE 3 RESULTS', title:'9 Real Events Confirmed' },
+        h('div', { style: { display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12 } },
+          [
+            { icon:'\ud83c\uddfa\ud83c\udde6', label:'Russia-Ukraine War 2022', year:'2022', color:'var(--red)' },
+            { icon:'\ud83e\udd20', label:'COVID-19 Pandemic', year:'2020', color:'var(--cyan)' },
+            { icon:'\ud83d\udc89', label:'COVID-19 Vaccination', year:'2021', color:'var(--cyan)' },
+            { icon:'\ud83c\udfc1', label:'Trump Presidency 2017-21', year:'2017', color:'var(--purple)' },
+            { icon:'\ud83d\udd0d', label:'Mueller Investigation', year:'2018', color:'var(--purple)' },
+            { icon:'\u2696\ufe0f', label:'Trump Impeachment Era', year:'2019', color:'var(--purple)' },
+            { icon:'\ud83d\udcf0', label:'Stormy Daniels Scandal', year:'2018', color:'var(--orange)' },
+            { icon:'\ud83d\uddfd', label:'2016 Presidential Election', year:'2016', color:'var(--blue)' },
+            { icon:'\ud83c\udf3f', label:'2016 Democratic Primary', year:'2015', color:'var(--blue)' }
+          ].map(function(evt) {
+            return h('div', { key: evt.label, style: { padding:'14px 16px', borderRadius:'var(--radius-sm)', background:'var(--bg-card)', border:'1px solid var(--border)' } },
+              h('div', { style: { fontSize:20, marginBottom:6 } }, evt.icon),
+              h('div', { style: { fontSize:12, fontWeight:600, color:'var(--text)', lineHeight:1.4, marginBottom:4 } }, evt.label),
+              h('div', { style: { fontSize:11, color: evt.color, fontWeight:700 } }, 'Peak: ' + evt.year + ' \u2705')
+            );
+          })
         )
       )
     );

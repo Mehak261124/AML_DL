@@ -30,3 +30,11 @@ bert_plots/*.json
 .DS_Store
 
 video_script.md
+
+# Model cache — large binary files, auto-generated
+bert_plots/cached_model/embeddings.npy
+bert_plots/cached_model/tpi_reduced.npy
+bert_plots/cached_model/bertopic_model
+bert_plots/cached_model/gbm_classifier.pkl
+bert_plots/cached_model/*.pkl
+bert_plots/cached_model/*.npy
