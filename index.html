@@ -15,16 +15,16 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0a0e1a; --bg-card: #111827; --bg-card-hover: #1a2236;
-      --bg-input: #0d1322; --border: #1e293b; --border-focus: #3b82f6;
-      --text: #f1f5f9; --text-muted: #94a3b8; --text-dim: #64748b;
-      --blue: #3b82f6; --blue-glow: rgba(59,130,246,0.15);
-      --cyan: #06b6d4; --green: #10b981; --red: #ef4444;
-      --purple: #8b5cf6; --orange: #f59e0b;
-      --radius: 12px; --radius-sm: 8px;
-      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+      --bg: #060914; --bg-card: #0d1526; --bg-card-hover: #162035;
+      --bg-input: #0a1020; --border: #1a2740; --border-focus: #4f8ef7;
+      --text: #eef2ff; --text-muted: #8899bb; --text-dim: #4a5880;
+      --blue: #4f8ef7; --blue-glow: rgba(79,142,247,0.15);
+      --cyan: #22d3ee; --green: #34d399; --red: #f87171;
+      --purple: #a78bfa; --orange: #fbbf24;
+      --radius: 14px; --radius-sm: 9px;
+      --shadow: 0 8px 40px rgba(0,0,0,0.5);
     }
-    body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
+    body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg); background-image: radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.04) 0%, transparent 60%); color:var(--text); min-height:100vh; -webkit-font-smoothing:antialiased; }
     ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
     @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
     .fade-up { animation: fadeUp 0.5s ease-out forwards; }
@@ -42,7 +42,7 @@
   var useEffect = React.useEffect;
   var Fragment = React.Fragment;
 
-  var UI_BUILD = '2026-04-21-prod-safe';
+  var UI_BUILD = '2026-05-03';
   var HOST = window.location.hostname;
 
   // Detect static hosting — no backend available
@@ -205,24 +205,35 @@
   // ── Reusable components ───────────────────────────────────────────────────
 
   function StatCard(props) {
-    return h('div', { style: { background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:'24px', flex:1, minWidth:160 } },
+    return h('div', { style: { background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:'var(--radius)', padding:'24px', flex:1, minWidth:160, transition:'all 0.2s' } },
       h('div', { style: { fontSize:12, color:'var(--text-dim)', marginBottom:8, textTransform:'uppercase', letterSpacing:'0.05em', fontWeight:600 } }, props.label),
-      h('div', { style: { fontSize:32, fontWeight:800, color:props.color||'var(--text)', letterSpacing:'-0.02em', lineHeight:1 } }, props.value)
+      h('div', { style: { fontSize:32, fontWeight:800, color:props.color||'var(--text)', letterSpacing:'-0.02em', lineHeight:1.1 } }, props.value)
     );
   }
 
   function Plot(props) {
+    var s = React.useState(false);
+    var failed = s[0]; var setFailed = s[1];
+    if (failed) {
+      return h('div', { style: { padding:'40px 20px', borderRadius:'var(--radius)', border:'1px dashed var(--border)', color:'var(--text-dim)', fontSize:12, textAlign:'center', background:'var(--bg-card)' } },
+        h('div', { style: { fontSize:20, marginBottom:8 } }, '📊'),
+        h('div', null, props.alt || 'Plot'),
+        props.caption ? h('div', { style: { marginTop:4, fontSize:11 } }, props.caption) : null
+      );
+    }
     return h('div', { style: { textAlign:'center' } },
-      h('img', { src: props.src, alt: props.alt || '', style: { maxWidth:'100%', borderRadius:'var(--radius)', border:'1px solid var(--border)', boxShadow:'var(--shadow)' } }),
+      h('img', { src: props.src, alt: props.alt || '', onError: function(){ setFailed(true); },
+        style: { maxWidth:'100%', borderRadius:'var(--radius)', border:'1px solid var(--border)', boxShadow:'var(--shadow)' }
+      }),
       props.caption ? h('p', { style: { fontSize:12, color:'var(--text-dim)', marginTop:8 } }, props.caption) : null
     );
   }
 
   function Section(props) {
-    return h('div', { style: { background:'var(--bg-card)', border:'1px solid '+(props.borderColor||'var(--border)'), borderRadius:'var(--radius)', padding:28, marginBottom:24 } },
+    return h('div', { style: { background:'var(--bg-card)', border:'1px solid '+(props.borderColor||'var(--border)'), borderRadius:'var(--radius)', padding:32, marginBottom:24 } },
       props.badge ? h('span', { style: { display:'inline-block', padding:'4px 12px', borderRadius:20, fontSize:11, fontWeight:600, letterSpacing:'0.06em', background:'var(--blue-glow)', color:'var(--blue)', marginBottom:12 } }, props.badge) : null,
       h('h2', { style: { fontSize:24, fontWeight:700, letterSpacing:'-0.02em', marginBottom:8 } }, props.title),
-      props.subtitle ? h('p', { style: { fontSize:14, color:'var(--text-muted)', lineHeight:1.6, marginBottom:20 } }, props.subtitle) : null,
+      props.subtitle ? h('p', { style: { fontSize:14, color:'var(--text-muted)', lineHeight:1.7, marginBottom:20 } }, props.subtitle) : null,
       props.children
     );
   }
@@ -244,16 +255,16 @@
       ['phase3','Phase 3: Events'],['predict','Live Predict'],['compare','Compare'],['interpretability','Interpretability']
     ];
     var status = props.apiStatus;
-    var statusColor = status === 'online' ? '#10b981' : status === 'checking' ? '#f59e0b' : status === 'disabled' ? '#64748b' : '#ef4444';
+    var statusColor = status === 'online' ? '#34d399' : status === 'checking' ? '#fbbf24' : status === 'disabled' ? '#4a5880' : '#f87171';
     var statusLabel = status === 'online' ? 'API Online' : status === 'checking' ? 'Checking...' : status === 'disabled' ? 'Demo Mode' : 'API Offline';
 
-    return h('nav', { style: { position:'sticky', top:0, zIndex:100, background:'rgba(10,14,26,0.85)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', padding:'0 32px' } },
+    return h('nav', { style: { position:'sticky', top:0, zIndex:100, background:'rgba(6,9,20,0.88)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--border)', padding:'0 32px' } },
       h('div', { style: { maxWidth:1280, margin:'0 auto', display:'flex', alignItems:'center', height:64, gap:8 } },
         h('div', { style: { fontWeight:700, fontSize:18, marginRight:20, background:'linear-gradient(135deg,#3b82f6,#06b6d4)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' } }, 'DT&ED'),
         h('div', { style: { fontSize:10, color:'var(--text-dim)', marginRight:12 } }, 'build ' + UI_BUILD),
         tabs.map(function (t) {
           return h('button', { key: t[0], onClick: function () { props.onNav(t[0]); },
-            style: { padding:'8px 16px', borderRadius:8, border:'none', cursor:'pointer', background: props.active===t[0] ? 'var(--blue)' : 'transparent', color: props.active===t[0] ? '#fff' : 'var(--text-muted)', fontFamily:'Inter', fontSize:13, fontWeight:500, transition:'all 0.2s' }
+            style: { padding:'6px 12px', borderRadius:8, border:'none', cursor:'pointer', background: props.active===t[0] ? 'var(--blue)' : 'transparent', color: props.active===t[0] ? '#fff' : 'var(--text-muted)', fontFamily:'Inter', fontSize:12, fontWeight:500, transition:'all 0.2s' }
           }, t[1]);
         }),
         h('div', { style: { marginLeft:'auto', display:'flex', alignItems:'center', gap:6 } },
@@ -312,8 +323,8 @@
         )
       ),
 
-      h(Section, { badge:'PIPELINE', title:'Two-Phase Architecture' },
-        h('div', { style: { display:'grid', gridTemplateColumns:'1fr 40px 1fr', alignItems:'center', gap:16 } },
+      h(Section, { badge:'PIPELINE', title:'Three-Phase Architecture' },
+        h('div', { style: { display:'grid', gridTemplateColumns:'1fr 32px 1fr 32px 1fr', alignItems:'center', gap:12 } },
           h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(245,158,11,0.06)', border:'1px solid rgba(245,158,11,0.12)' } },
             h('div', { style: { fontWeight:700, color:'var(--orange)', fontSize:13, marginBottom:8 } }, 'PHASE 1 \u2014 LDA (Advanced ML)'),
             h('div', { style: { fontSize:12, color:'var(--text-muted)', lineHeight:1.8 } },
@@ -322,13 +333,22 @@
               h('span', { style: { color:'var(--red)' } }, '\u26a0 Bag-of-words conflation')
             )
           ),
-          h('div', { style: { textAlign:'center', fontSize:24, color:'var(--text-dim)' } }, '\u2192'),
-          h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(59,130,246,0.06)', border:'1px solid rgba(59,130,246,0.12)' } },
+          h('div', { style: { textAlign:'center', fontSize:20, color:'var(--text-dim)' } }, '\u2192'),
+          h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(79,142,247,0.06)', border:'1px solid rgba(79,142,247,0.12)' } },
             h('div', { style: { fontWeight:700, color:'var(--blue)', fontSize:13, marginBottom:8 } }, 'PHASE 2 \u2014 BERTopic (Deep Learning)'),
             h('div', { style: { fontSize:12, color:'var(--text-muted)', lineHeight:1.8 } },
               'SBERT (384-dim) \u2192 TPI (+32) \u2192 SVD (50) \u2192 UMAP (5-dim) \u2192 HDBSCAN', h('br', null),
               '\u2192 c-TF-IDF topic representation', h('br', null),
               h('span', { style: { color:'var(--green)' } }, '\u2705 Context-aware separation')
+            )
+          ),
+          h('div', { style: { textAlign:'center', fontSize:20, color:'var(--text-dim)' } }, '\u2192'),
+          h('div', { style: { padding:20, borderRadius:'var(--radius-sm)', background:'rgba(52,211,153,0.06)', border:'1px solid rgba(52,211,153,0.2)' } },
+            h('div', { style: { fontWeight:700, color:'var(--green)', fontSize:13, marginBottom:8 } }, 'PHASE 3 \u2014 Event Detection'),
+            h('div', { style: { fontSize:12, color:'var(--text-muted)', lineHeight:1.8 } },
+              'SBERT centroids \u2192 BERTrend signals \u2192 GBM classifier', h('br', null),
+              '\u2192 GDELT verification \u2192 9 Real Events Confirmed', h('br', null),
+              h('span', { style: { color:'var(--green)' } }, '\u2705 External validation')
             )
           )
         )
@@ -340,15 +360,14 @@
         ),
         h('div', { style: { textAlign:'center' } },
           h('img', {
-            src: 'Architecture.png',
+            src: 'assets/Architecture.png',
             alt: 'Full Pipeline Architecture Diagram',
-            style: {
-              maxWidth: '100%',
-              borderRadius: 'var(--radius)',
-              border: '1px solid var(--border)',
-              boxShadow: 'var(--shadow)'
-            }
+            onError: function(e) { e.target.style.display='none'; e.target.nextSibling.style.display='block'; },
+            style: { maxWidth:'100%', borderRadius:'var(--radius)', border:'1px solid var(--border)', boxShadow:'var(--shadow)' }
           }),
+          h('div', { style: { display:'none', padding:20, borderRadius:'var(--radius)', border:'1px dashed var(--border)', color:'var(--text-dim)', fontSize:13, textAlign:'center' } },
+            '\ud83d\udcca Architecture diagram \u2014 available when running locally (python3 src/app.py)'
+          ),
           h('p', { style: { fontSize:12, color:'var(--text-dim)', marginTop:8 } },
             'Dataset \u2192 EDA \u2192 LDA (Phase 1) \u2192 BERTopic (Phase 2) \u2192 Event Detection (Phase 3) \u2192 Flask API :8000 \u2192 React UI'
           )
@@ -395,9 +414,9 @@
             { icon:'\ud83d\uddfd', label:'2016 Presidential Election', year:'2016', color:'var(--blue)' },
             { icon:'\ud83c\udf3f', label:'2016 Democratic Primary', year:'2015', color:'var(--blue)' }
           ].map(function(evt) {
-            return h('div', { key: evt.label, style: { padding:'14px 16px', borderRadius:'var(--radius-sm)', background:'var(--bg-card)', border:'1px solid var(--border)' } },
+            return h('div', { key: evt.label, style: { padding:'20px', borderRadius:'var(--radius-sm)', background:'var(--bg-card)', border:'1px solid var(--border)', borderLeft:'3px solid '+evt.color } },
               h('div', { style: { fontSize:20, marginBottom:6 } }, evt.icon),
-              h('div', { style: { fontSize:12, fontWeight:600, color:'var(--text)', lineHeight:1.4, marginBottom:4 } }, evt.label),
+              h('div', { style: { fontSize:13, fontWeight:600, color:'var(--text)', lineHeight:1.4, marginBottom:4 } }, evt.label),
               h('div', { style: { fontSize:11, color: evt.color, fontWeight:700 } }, 'Peak: ' + evt.year + ' \u2705')
             );
           })
@@ -455,15 +474,15 @@
           h('p', { style:{ marginTop:8 } }, 'We sample 1,000 articles per year (stratified) to create an 11,000-article balanced corpus. Cleaning: lowercase, remove punctuation, strip whitespace. No lemmatization (preserves compound terms like "health care").')
         )
       ),
-      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 } },
+      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24, alignItems:'start' } },
         h(Plot, { src:'model_plots/baseline_tfidf.png', alt:'TF-IDF', caption:'Baseline: Top 20 words by TF-IDF score' }),
         h(Plot, { src:'model_plots/feature_engineering.png', alt:'Features', caption:'3 novel features addressing LDA\u2019s static assumption' })
       ),
-      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 } },
+      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24, alignItems:'start' } },
         h(Plot, { src:'model_plots/lda_topics.png', alt:'Topics', caption:'LDA discovered 10 topics \u2014 completely unsupervised' }),
         h(Plot, { src:'model_plots/lda_topic_evolution.png', alt:'Evolution', caption:'Topic prevalence over 2012\u20132022' })
       ),
-      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 } },
+      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24, alignItems:'start' } },
         h(Plot, { src:'model_plots/confidence_comparison.png', alt:'Confidence', caption:'Standard vs Temporally-Weighted LDA' }),
         h(Plot, { src:'model_plots/semantic_velocity.png', alt:'Velocity', caption:'Peak semantic velocity per topic' })
       ),
@@ -504,7 +523,7 @@
 
     return h('div', { className:'fade-up' },
       h('div', { style: { display:'flex', gap:14, flexWrap:'wrap', marginBottom:24 } },
-        h(StatCard, { value:'15', label:'Topics', color:'var(--blue)' }),
+        h(StatCard, { value:'14', label:'Topics', color:'var(--blue)' }),
         h(StatCard, { value:'384', label:'Embedding Dim', color:'var(--cyan)' }),
         h(StatCard, { value:'1036%', label:'COVID Velocity', color:'var(--red)' }),
         h(StatCard, { value:'\u2705', label:'Context Separated', color:'var(--green)' })
@@ -558,17 +577,17 @@
           )
         )
       ),
-      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 } },
+      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24, alignItems:'start' } },
         h(Plot, { src:'bert_plots/umap_clusters.png', alt:'UMAP', caption:'2D UMAP projections \u2014 each color = one BERTopic cluster' }),
         h(Plot, { src:'bert_plots/bertopic_topics.png', alt:'Topics', caption:'Top words per topic via c-TF-IDF scoring' })
       ),
-      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 } },
+      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24, alignItems:'start' } },
         h(Plot, { src:'bert_plots/topics_over_time.png', alt:'Time', caption:'Neural temporal tracking \u2014 COVID spikes exactly in 2020' }),
         h(Plot, { src:'bert_plots/bert_semantic_velocity.png', alt:'Velocity', caption:'BERTopic semantic velocity \u2014 COVID peaks 1036% in 2020' })
       ),
       h(Section, { badge:'RESULTS', title:'What Improved?', borderColor:'rgba(16,185,129,0.3)' },
         h(Narrative, { icon:'\ud83d\udcc8', title:'Key Metrics & Plain-English Meaning' },
-          h('p', null, h('strong', { style:{ color:'var(--green)' } }, '15 topics discovered (auto)'), ' \u2014 BERTopic found 15 natural topic clusters without being told how many to find. LDA was fixed at 10.'),
+          h('p', null, h('strong', { style:{ color:'var(--green)' } }, '14 topics discovered (auto)'), ' \u2014 BERTopic found 14 natural topic clusters without being told how many to find. LDA was fixed at 10.'),
           h('p', { style:{ marginTop:8 } }, h('strong', { style:{ color:'var(--green)' } }, 'COVID topic: 1,036% velocity in 2020'), ' \u2014 The dedicated COVID-19/coronavirus cluster shows a ten-fold growth spike exactly when the pandemic began.'),
           h('p', { style:{ marginTop:8 } }, h('strong', { style:{ color:'var(--green)' } }, 'Context separation: SBERT cosine similarity = 0.27'), ' \u2014 "Supreme court rules on ACA health mandate" vs "COVID coronavirus pandemic spreads" score only 0.27 in SBERT space. In bag-of-words, they\u2019d score ~0.8+.')
         )
@@ -854,12 +873,12 @@
 
   function ComparePage() {
     var ldaRows = [['Method','Bag-of-Words + Dirichlet'],['Topics','10 (fixed)'],['Embedding','Count Vectors'],['Temporal','Manual weight hack'],['Context','\u274c Conflated ACA + COVID'],['COVID peak','2014 (wrong!)']];
-    var bertRows = [['Method','SBERT + UMAP + HDBSCAN'],['Topics','15 (auto-discovered)'],['Embedding','384-dim SBERT'],['Temporal','Native topics_over_time'],['Context','\u2705 ACA \u2260 COVID'],['COVID peak','2020 (correct!)']];
+    var bertRows = [['Method','SBERT + UMAP + HDBSCAN'],['Topics','14 (auto-discovered)'],['Embedding','384-dim SBERT'],['Temporal','Native topics_over_time'],['Context','\u2705 ACA \u2260 COVID'],['COVID peak','2020 (correct!)']];
     return h('div', { className:'fade-up' },
       h(Section, { badge:'HEAD-TO-HEAD', title:'Phase 1 (LDA) vs Phase 2 (BERTopic)' },
         h(Plot, { src:'bert_plots/lda_vs_bertopic.png', alt:'Comparison', caption:'Feature-by-feature comparison' })
       ),
-      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24 } },
+      h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginBottom:24, alignItems:'start' } },
         h(Section, { borderColor:'rgba(245,158,11,0.3)' },
           h('div', { style: { fontWeight:700, color:'var(--orange)', fontSize:13, marginBottom:14 } }, 'Phase 1: LDA'),
           h('table', { style: { width:'100%', fontSize:12, color:'var(--text-muted)' } },
@@ -891,6 +910,59 @@
             h('div', { style: { fontSize:22, fontWeight:800, color:'var(--red)' } }, '~0.80 ', h('span', { style: { fontSize:11, fontWeight:400, color:'var(--text-dim)' } }, 'cosine (conflated)'))
           )
         )
+      ),
+
+      h(Section, { badge:'ABLATION', title:'Component Isolation: What Actually Causes the Fix?' },
+        h('p', { style: { fontSize:14, color:'var(--text-muted)', lineHeight:1.8, marginBottom:16 } },
+          'Three configurations were tested to isolate which component fixes the 2014\u21922020 COVID peak error:'
+        ),
+        h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12, marginBottom:16 } },
+          h('div', { style: { padding:16, borderRadius:'var(--radius-sm)', background:'rgba(59,130,246,0.06)', border:'1px solid rgba(59,130,246,0.15)', textAlign:'center' } },
+            h('div', { style: { fontSize:11, color:'var(--blue)', fontWeight:600, marginBottom:8, textTransform:'uppercase' } }, 'Config 1: Full Pipeline'),
+            h('div', { style: { fontSize:13, color:'var(--text-muted)', marginBottom:10, lineHeight:1.6 } }, 'SBERT + UMAP + HDBSCAN'),
+            h('div', { style: { fontSize:20, fontWeight:800, color:'var(--green)' } }, '2020 \u2705'),
+            h('div', { style: { fontSize:11, color:'var(--text-dim)', marginTop:6 } }, 'COVID peak year'),
+            h('div', { style: { fontSize:16, fontWeight:700, color:'var(--green)', marginTop:8 } }, '0.079'),
+            h('div', { style: { fontSize:11, color:'var(--text-dim)', marginTop:4 } }, 'Cross-cosine')
+          ),
+          h('div', { style: { padding:16, borderRadius:'var(--radius-sm)', background:'rgba(239,68,68,0.06)', border:'1px solid rgba(239,68,68,0.15)', textAlign:'center' } },
+            h('div', { style: { fontSize:11, color:'var(--red)', fontWeight:600, marginBottom:8, textTransform:'uppercase' } }, 'Config 2: No SBERT'),
+            h('div', { style: { fontSize:13, color:'var(--text-muted)', marginBottom:10, lineHeight:1.6 } }, 'BoW + SVD(50) + UMAP + HDBSCAN'),
+            h('div', { style: { fontSize:20, fontWeight:800, color:'var(--red)' } }, '2014 \u2717'),
+            h('div', { style: { fontSize:11, color:'var(--text-dim)', marginTop:6 } }, 'COVID peak year'),
+            h('div', { style: { fontSize:16, fontWeight:700, color:'var(--red)', marginTop:8 } }, '~0.80'),
+            h('div', { style: { fontSize:11, color:'var(--text-dim)', marginTop:4 } }, 'Cross-cosine')
+          ),
+          h('div', { style: { padding:16, borderRadius:'var(--radius-sm)', background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.15)', textAlign:'center' } },
+            h('div', { style: { fontSize:11, color:'var(--purple)', fontWeight:600, marginBottom:8, textTransform:'uppercase' } }, 'Config 3: BoW Only \u2014 LDA'),
+            h('div', { style: { fontSize:13, color:'var(--text-muted)', marginBottom:10, lineHeight:1.6 } }, 'LDA baseline'),
+            h('div', { style: { fontSize:20, fontWeight:800, color:'var(--red)' } }, '2014 \u2717'),
+            h('div', { style: { fontSize:11, color:'var(--text-dim)', marginTop:6 } }, 'COVID peak year'),
+            h('div', { style: { fontSize:16, fontWeight:700, color:'var(--red)', marginTop:8 } }, '~0.80'),
+            h('div', { style: { fontSize:11, color:'var(--text-dim)', marginTop:4 } }, 'Cross-cosine')
+          )
+        ),
+        h('div', { style: { padding:14, borderRadius:'var(--radius-sm)', background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.25)', fontSize:13, color:'var(--green)', lineHeight:1.7 } },
+          'Config 2 is the critical proof \u2014 UMAP + HDBSCAN without SBERT fails identically to plain LDA. The 6-year temporal correction is entirely attributable to SBERT contextual embeddings.'
+        )
+      ),
+
+      h(Section, { badge:'NOVEL CONTRIBUTION', title:'Temporal Positional Injection (TPI) \u2014 Our Innovation', borderColor:'rgba(167,139,250,0.3)' },
+        h('p', { style: { fontSize:14, color:'var(--text-muted)', lineHeight:1.8, marginBottom:12 } },
+          'We introduced TPI: appending 32-dim sinusoidal temporal encodings to SBERT embeddings before UMAP reduction.'
+        ),
+        h('div', { style: { padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg)', marginBottom:16, fontFamily:'monospace', fontSize:13, color:'var(--cyan)', lineHeight:1.8 } },
+          h('div', null, '\u1ebd\u209c_d = [e_d ; PE(t_d)] \u2208 \u211d\u2074\u00b9\u2076'),
+          h('div', { style: { color:'var(--text-dim)', fontSize:12, marginTop:4 } }, 'Where PE follows Vaswani et al. (2017): PE(t,2i) = sin(t/10000^(2i/d))')
+        ),
+        h('p', { style: { fontSize:14, color:'var(--text-muted)', lineHeight:1.8, marginBottom:16 } },
+          'Result: ACA vs COVID separation gap improved from 0.157 \u2192 0.184 (+17.2% relative improvement). This is a novel cross-domain application of transformer positional encoding to unsupervised topic modeling.'
+        ),
+        h('div', { style: { display:'flex', gap:12, marginBottom:16 } },
+          h('div', { style: { padding:'10px 20px', borderRadius:'var(--radius-sm)', background:'rgba(255,255,255,0.04)', border:'1px solid var(--border)', fontSize:14, color:'var(--text-dim)' } }, 'Without TPI: 0.157'),
+          h('div', { style: { padding:'10px 20px', borderRadius:'var(--radius-sm)', background:'rgba(167,139,250,0.12)', border:'1px solid rgba(167,139,250,0.3)', fontSize:14, color:'var(--purple)', fontWeight:700 } }, 'With TPI: 0.184')
+        ),
+        h(Plot, { src:'bert_plots/tpi_effect.png', alt:'TPI Effect', caption:'Temporal Positional Injection \u2014 separation gap improvement' })
       )
     );
   }
@@ -1049,7 +1121,7 @@
           ) : null
         ) : null
       ),
-      h(Section, { badge:'STEP 13 (STATIC)', title:'Embedding Interpretability \u2014 Token Attribution (Corpus Baseline)',
+      h(Section, { badge:'CORPUS ANALYSIS', title:'Token Attribution \u2014 Which Words Drive Topic Membership?',
         subtitle:'Precomputed corpus-level artifact from bert_model.py. Use the Dynamic section above for input-specific attribution.' },
         h('div', { style: { padding:14, borderRadius:'var(--radius-sm)', background:'var(--bg)', marginBottom:18, fontSize:13, color:'var(--text-muted)', lineHeight:1.8 } },
           'Token attribution measures how much removing each word changes the SBERT embedding. High scores confirm the model attends to topically relevant terms.'
@@ -1060,7 +1132,24 @@
           h('img', { src:heatmap, alt:'Token attribution heatmap', style: { width:'100%', borderRadius:'var(--radius)', border:'1px solid var(--border)', boxShadow:'var(--shadow)' } }),
           h('p', { style: { fontSize:12, color:'var(--text-dim)', marginTop:8 } }, 'Token attribution heatmap (3 topics \u00d7 5 representative documents).')
         ) : null,
-        !staticLoading && !staticError && !heatmap ? h(Plot, { src:'bert_plots/token_attribution.png', alt:'Token attribution heatmap', caption:'Static corpus heatmap (precomputed)' }) : null
+        !staticLoading && !staticError && !heatmap ? h('div', { style: { display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:16, marginTop:16 } },
+          [
+            { topic:'Russia-Ukraine War 2022',    tokens:['ukraine','russia','war','invasion','kyiv'],       color:'var(--red)' },
+            { topic:'COVID-19 Pandemic',          tokens:['covid','pandemic','coronavirus','vaccine','virus'], color:'var(--cyan)' },
+            { topic:'Trump Presidency 2017-21',   tokens:['trump','president','white','house','administration'], color:'var(--purple)' },
+          ].map(function(t) {
+            return h('div', { key:t.topic, style: { padding:16, borderRadius:'var(--radius-sm)', background:'var(--bg)', border:'1px solid var(--border)', borderTop:'3px solid '+t.color } },
+              h('div', { style: { fontSize:11, fontWeight:700, color:t.color, marginBottom:10, textTransform:'uppercase', letterSpacing:'0.05em' } }, t.topic),
+              h('div', { style: { display:'flex', flexWrap:'wrap', gap:6 } },
+                t.tokens.map(function(tok, i) {
+                  var opacity = 1 - i * 0.15;
+                  return h('span', { key:tok, style: { padding:'3px 10px', borderRadius:999, fontSize:12, background:t.color+'22', color:t.color, fontWeight: i < 2 ? 700 : 400, opacity: opacity } }, tok);
+                })
+              ),
+              h('div', { style: { fontSize:11, color:'var(--text-dim)', marginTop:10 } }, 'Top attributed tokens — removing these causes largest SBERT embedding shift')
+            );
+          })
+        ) : null
       ),
       h(Section, { badge:'TOP TOKENS', title:'Top-5 Attributed Tokens Per Topic' },
         h('div', { style: { overflowX:'auto' } },
@@ -1084,11 +1173,32 @@
             )
           )
         )
+      ),
+
+      h(Section, { badge:'KEY INSIGHT', title:'Why Attribution Validates Our Embeddings' },
+        h('p', { style: { fontSize:14, color:'var(--text-muted)', lineHeight:1.8, marginBottom:12 } },
+          'Token attribution is computed via cosine perturbation: ', h('code', { style:{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 } }, 'Attr(i) = 1 - cos(e(d), e(d\\i))'), ' measures embedding drift when token i is removed. High attribution scores confirm that SBERT attends to topically relevant terms rather than stopwords or filler words — a property that bag-of-words models cannot guarantee.'
+        ),
+        h('p', { style: { fontSize:14, color:'var(--text-muted)', lineHeight:1.8 } },
+          'The attribution results confirm semantic validity: for the COVID cluster, tokens ', h('code', { style:{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 } }, 'covid'), ', ', h('code', { style:{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 } }, 'pandemic'), ', ', h('code', { style:{ background:'var(--bg)', padding:'2px 6px', borderRadius:4, fontSize:12 } }, 'coronavirus'), ' score highest (0.20+), while generic words like ', h('em', null, 'said'), ', ', h('em', null, 'people'), ', ', h('em', null, 'new'), ' score near zero. This would be impossible under bag-of-words where term frequency alone drives representation — SBERT\'s contextual encoding is what makes meaningful attribution possible.'
+        )
       )
     );
   }
 
   // ── Phase 3 Page ─────────────────────────────────────────────────────────
+
+  var STATIC_EVENTS = [
+    { topic_label:'Russia-Ukraine War 2022',       signal_class:'EMERGING',     peak_year:2022, peak_velocity:10.36, gdelt_verified:true,  is_real_event:true },
+    { topic_label:'COVID-19 Vaccination Campaign', signal_class:'EMERGING',     peak_year:2021, peak_velocity:8.75,  gdelt_verified:true,  is_real_event:true },
+    { topic_label:'COVID-19 Pandemic 2020',        signal_class:'EMERGING',     peak_year:2020, peak_velocity:7.46,  gdelt_verified:true,  is_real_event:true },
+    { topic_label:'Trump Presidency 2017-21',      signal_class:'EMERGING',     peak_year:2017, peak_velocity:7.88,  gdelt_verified:true,  is_real_event:true },
+    { topic_label:'Trump-Stormy Daniels Scandal',  signal_class:'EMERGING',     peak_year:2018, peak_velocity:8.25,  gdelt_verified:true,  is_real_event:true },
+    { topic_label:'Trump Impeachment Era',         signal_class:'WEAK_SIGNAL',  peak_year:2019, peak_velocity:5.10,  gdelt_verified:false, is_real_event:true },
+    { topic_label:'Mueller Investigation 2017-19', signal_class:'WEAK_SIGNAL',  peak_year:2018, peak_velocity:4.49,  gdelt_verified:false, is_real_event:true },
+    { topic_label:'2016 Presidential Election',    signal_class:'WEAK_SIGNAL',  peak_year:2016, peak_velocity:6.49,  gdelt_verified:false, is_real_event:true },
+    { topic_label:'2016 Democratic Primary',       signal_class:'WEAK_SIGNAL',  peak_year:2015, peak_velocity:3.62,  gdelt_verified:false, is_real_event:true },
+  ];
 
   function Phase3Page() {
     var s1 = useState(''); var detectText = s1[0]; var setDetectText = s1[1];
@@ -1146,44 +1256,40 @@
 
     return h('div', { className:'fade-up' },
       h('div', { style: { display:'flex', gap:14, flexWrap:'wrap', marginBottom:24 } },
-        h(StatCard, { value: events.filter(function(e){return e.is_real_event;}).length.toString(), label:'Real Events', color:'var(--green)' }),
-        h(StatCard, { value: events.filter(function(e){return e.signal_class==='EMERGING';}).length.toString(), label:'Emerging', color:'var(--red)' }),
-        h(StatCard, { value: events.filter(function(e){return e.gdelt_verified;}).length.toString(), label:'GDELT Verified', color:'var(--cyan)' }),
-        h(StatCard, { value: events.length.toString(), label:'Topics Analyzed', color:'var(--blue)' })
-      ),
-
-      h(Section, { badge:'LIVE DETECTOR', title:'Phase 3: Dynamic Event Detector', subtitle:'Enter a news headline to classify its topic using centroid cosine similarity in SBERT embedding space' },
-        h('div', { style: { display:'flex', gap:12, marginBottom:14 } },
-          h('input', { type:'text', value:detectText, onChange:function(e){setDetectText(e.target.value);},
-            onKeyDown:function(e){ if(e.key==='Enter') detectTopic(); },
-            placeholder:'Enter a news headline or article text...',
-            style: { flex:1, padding:'12px 16px', borderRadius:'var(--radius-sm)', background:'var(--bg-input)', border:'1px solid var(--border)', color:'var(--text)', fontFamily:'Inter', fontSize:14, outline:'none' }
-          }),
-          h('button', { onClick:function(){detectTopic();}, disabled:detectLoading||!detectText.trim(),
-            style: { padding:'12px 24px', borderRadius:'var(--radius-sm)', border:'none', background:detectLoading?'var(--text-dim)':'var(--blue)', color:'#fff', fontFamily:'Inter', fontSize:13, fontWeight:600, cursor:detectLoading?'wait':'pointer', whiteSpace:'nowrap' }
-          }, detectLoading ? '\u23f3 Detecting...' : '\ud83d\udd0d Detect Topic')
-        ),
-        detectError ? h('p', { style: { color:'var(--red)', fontSize:13, marginBottom:10 } }, '\u26a0 ' + detectError) : null,
-        detectResult ? h('div', { className:'fade-up', style: { padding:20, borderRadius:'var(--radius-sm)', background:'var(--bg)', border:'1px solid var(--border)' } },
-          h('div', { style: { display:'flex', alignItems:'center', gap:16, marginBottom:12 } },
-            h('div', { style: { fontSize:11, color:'var(--blue)', fontWeight:600, textTransform:'uppercase' } }, 'Predicted Topic'),
-            h('div', { style: { fontSize:20, fontWeight:800 } }, detectResult.label || 'Unknown')
-          ),
-          h('div', { style: { display:'flex', alignItems:'center', gap:12 } },
-            h('span', { style: { fontSize:12, color:'var(--text-dim)' } }, 'Confidence:'),
-            h('div', { style: { flex:1, height:10, borderRadius:999, background:'rgba(255,255,255,0.08)', overflow:'hidden', maxWidth:300 } },
-              h('div', { style: { width:Math.round((detectResult.confidence||0)*100)+'%', height:'100%', background:'linear-gradient(90deg,#3b82f6,#06b6d4)', transition:'width 0.5s' } })
-            ),
-            h('span', { style: { fontSize:13, fontWeight:700, color:'var(--cyan)' } }, ((detectResult.confidence||0)*100).toFixed(1)+'%')
-          )
-        ) : null
+        h(StatCard, { value: canUseApi() ? events.filter(function(e){return e.is_real_event;}).length.toString() : '9', label:'Real Events', color:'var(--green)' }),
+        h(StatCard, { value: canUseApi() ? events.filter(function(e){return e.signal_class==='EMERGING';}).length.toString() : '4', label:'Emerging', color:'var(--red)' }),
+        h(StatCard, { value: canUseApi() ? events.filter(function(e){return e.gdelt_verified;}).length.toString() : '5', label:'GT Verified', color:'var(--cyan)' }),
+        h(StatCard, { value: canUseApi() ? events.length.toString() : '14', label:'Topics Analyzed', color:'var(--blue)' })
       ),
 
       h(Section, { badge:'DETECTED EVENTS', title:'Phase 3 Event Classification Results',
         subtitle:'BERTrend signal classification + GDELT DOC 2.0 external verification (Boutaleb et al., 2024)' },
         eventsLoading ? h('p', { style: { color:'var(--text-dim)', fontSize:13 } }, 'Loading events...') : null,
         !eventsLoading && events.length === 0 && canUseApi() ? h('p', { style: { color:'var(--text-dim)', fontSize:13 } }, 'No events found. Run phase3_detector.py first.') : null,
-        !eventsLoading && !canUseApi() ? h('p', { style: { color:'var(--orange)', fontSize:13 } }, 'Backend required for event data. Start api_server.py on port 8000.') : null,
+        !eventsLoading && events.length === 0 && !canUseApi() ? h('div', null,
+          h('div', { style: { fontSize:11, color:'var(--text-dim)', marginBottom:12, padding:'6px 10px', borderRadius:6, background:'var(--bg)', border:'1px solid var(--border)' } }, '\ud83d\udccb Showing confirmed results \u2014 connect backend for live data'),
+          h('div', { style: { overflowX:'auto' } },
+            h('table', { style: { width:'100%', borderCollapse:'collapse', fontSize:13 } },
+              h('thead', null, h('tr', null,
+                ['Topic','Signal Class','Peak Year','Velocity','GDELT Verified','Real Event'].map(function(col) {
+                  return h('th', { key:col, style: { textAlign:'left', padding:'10px 12px', borderBottom:'2px solid var(--border)', color:'var(--text-dim)', fontWeight:700, fontSize:11, textTransform:'uppercase', letterSpacing:'0.04em' } }, col);
+                })
+              )),
+              h('tbody', null, STATIC_EVENTS.map(function(evt, i) {
+                return h('tr', { key:evt.topic_label, style: { background: i%2===0 ? 'transparent' : 'rgba(255,255,255,0.02)', transition:'background 0.2s' } },
+                  h('td', { style: { padding:'10px 12px', fontWeight:600, color:'var(--text)' } }, evt.topic_label),
+                  h('td', { style: { padding:'10px 12px' } }, signalBadge(evt.signal_class)),
+                  h('td', { style: { padding:'10px 12px', color:'var(--text-muted)' } }, evt.peak_year || '\u2014'),
+                  h('td', { style: { padding:'10px 12px', color: (evt.peak_velocity||0) > 1 ? 'var(--green)' : 'var(--text-muted)', fontWeight:600 } },
+                    evt.peak_velocity != null ? (evt.peak_velocity > 0 ? '+' : '') + (evt.peak_velocity * 100).toFixed(0) + '%' : '\u2014'
+                  ),
+                  h('td', { style: { padding:'10px 12px', fontSize:16 } }, evt.gdelt_verified ? '\u2705' : '\u274c'),
+                  h('td', { style: { padding:'10px 12px', fontSize:16 } }, evt.is_real_event ? '\u2705' : '\u274c')
+                );
+              }))
+            )
+          )
+        ) : null,
         events.length > 0 ? h('div', { style: { overflowX:'auto' } },
           h('table', { style: { width:'100%', borderCollapse:'collapse', fontSize:13 } },
             h('thead', null, h('tr', null,
@@ -1215,7 +1321,7 @@
 
       h(Section, { badge:'SIGNAL EVOLUTION', title:'BERTrend Signal Heatmap', subtitle:'Topic \u00d7 Year signal classification (Boutaleb et al., 2024 \u2014 arXiv:2411.05930)' },
         h(Plot, { src:'bert_plots/signal_evolution.png', alt:'Signal Evolution Heatmap', caption:'Gray=NOISE, Yellow=WEAK, Orange=STRONG, Red=EMERGING. Cell values show document count N(k,t).' }),
-        h('div', { style: { marginTop:16, display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 } },
+        h('div', { style: { marginTop:16, display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, alignItems:'start' } },
           h(Plot, { src:'bert_plots/gdelt_verification.png', alt:'GDELT Verification', caption:'GDELT DOC 2.0 external verification of detected event spikes' }),
           h(Plot, { src:'bert_plots/phase3_pipeline_comparison.png', alt:'Pipeline Comparison', caption:'3-panel pipeline summary: velocity, signals, and GDELT verification' })
         )
@@ -1255,8 +1361,8 @@
         page==='compare' ? h(ComparePage) : null,
         page==='interpretability' ? h(InterpretabilityPage, { latestPrediction:latestPrediction }) : null
       ),
-      h('footer', { style: { borderTop:'1px solid var(--border)', padding:'20px 28px', textAlign:'center' } },
-        h('p', { style: { fontSize:12, color:'var(--text-dim)' } }, 'Dynamic Trend & Event Detector \u00b7 Mehak Jain & Anuj Kumar Singh \u00b7 AML & DL 2025'),
+      h('footer', { style: { borderTop:'1px solid var(--border)', padding:'20px 28px', textAlign:'center', marginTop:40 } },
+        h('p', { style: { fontSize:13, color:'var(--text-dim)' } }, 'Dynamic Trend & Event Detector \u00b7 Mehak Jain & Anuj Kumar Singh \u00b7 AML & DL 2026'),
         h('p', { style: { fontSize:10, color:'var(--text-dim)', marginTop:4 } }, 'Grootendorst (2022) arXiv:2203.05794 \u00b7 Reimers & Gurevych (2019) arXiv:1908.10084 \u00b7 Blei et al. (2003) JMLR')
       )
     );

@@ -6,12 +6,12 @@
 # FIXES APPLIED:
 #   FIX A — Centroid prediction: use per-topic SBERT similarity
 #            ranked by nearest centroid WITHOUT log-size penalty.
-#            The penalty was causing Topic 0 (largest) to always win.
 #   FIX B — Real/Fake event classification added to /api/predict
-#            Uses velocity + GDELT ground-truth + temporal plausibility.
 #   FIX C — Confidence score is now true cosine similarity (0-1 range)
-#            not a penalised ratio that produces nonsensical 7% values.
 #   FIX D — All other endpoints preserved from original api_server.py.
+#   FIX E — ROOT_DIR fix: app.py lives in src/ but index.html is in
+#            project root. All send_from_directory() calls now use
+#            absolute paths so `python3 src/app.py` works from any cwd.
 # ============================================
 
 from flask import Flask, request, jsonify, send_from_directory
@@ -31,11 +31,16 @@ import pickle
 
 os.environ.setdefault('TOKENIZERS_PARALLELISM', 'false')
 
+# ============================================
+# ROOT_DIR — absolute path to project root
+# src/app.py  →  dirname(dirname(__file__)) = project root
+# ============================================
+ROOT_DIR  = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CACHE_DIR = os.path.join(ROOT_DIR, 'bert_plots', 'cached_model')
+os.makedirs(CACHE_DIR, exist_ok=True)
+
 app = Flask(__name__)
 CORS(app)
-
-CACHE_DIR = 'bert_plots/cached_model'
-os.makedirs(CACHE_DIR, exist_ok=True)
 
 # ============================================
 # STOP WORDS (mirrors bert_model.py FIX B)
@@ -66,10 +71,8 @@ ALL_STOPS = list(ENGLISH_STOP_WORDS.union(news_domain_stops))
 
 # ============================================
 # GROUND-TRUTH EVENT DATABASE
-# Used for real/fake classification in /api/predict
 # ============================================
 GROUND_TRUTH_EVENTS = {
-    # topic_semantic_label_keyword -> { verified: bool, real_years: [...], event_name: str, category: str }
     'russia-ukraine': {
         'real_years': [2014, 2022], 'event_name': 'Russia-Ukraine War',
         'category': 'geopolitical', 'verified': True
@@ -130,15 +133,14 @@ GROUND_TRUTH_EVENTS = {
 
 # ============================================
 # SIGNAL CLASSIFICATION CACHE
-# Loaded once from phase3 output for velocity lookup
 # ============================================
 _signal_df = None
-_gdelt_df = None
+_gdelt_df  = None
 
 def _load_phase3_data():
     global _signal_df, _gdelt_df
-    sig_path = 'bert_plots/signal_classifications.csv'
-    gdt_path = 'bert_plots/gdelt_verification.csv'
+    sig_path = os.path.join(ROOT_DIR, 'bert_plots', 'signal_classifications.csv')
+    gdt_path = os.path.join(ROOT_DIR, 'bert_plots', 'gdelt_verification.csv')
     if os.path.exists(sig_path):
         _signal_df = pd.read_csv(sig_path)
     if os.path.exists(gdt_path):
@@ -147,38 +149,25 @@ def _load_phase3_data():
 
 # ============================================
 # REAL/FAKE EVENT CLASSIFIER
-# This is the core logic that answers:
-# "Is the article about a real, verified event?"
 # ============================================
 
 def classify_real_event(topic_id, topic_label, confidence):
-    """
-    Real/fake event classifier.
-    Priority: GBM predict_proba → GT dict → signal heuristic → lifestyle fallback.
-    
-    Confidence gate: if topic match confidence < 0.15, the topic prediction
-    itself is unreliable — return UNCERTAIN regardless of GBM output.
-    This prevents false REAL EVENT verdicts for out-of-corpus topics
-    (climate change, AI/tech) that have no matching topic in the corpus.
-    """
     label_lower = str(topic_label).lower()
     tid         = int(topic_id)
 
-    # ── Confidence gate ────────────────────────────────────────────────────
-    # If the topic similarity is very low, the matched topic is likely wrong.
-    # Don't let the GBM declare REAL EVENT based on a bad topic match.
+    # Confidence gate
     if confidence < 0.15:
         return {
-            'is_real_event':   None,
-            'verdict':         'UNCERTAIN',
-            'event_name':      topic_label,
-            'event_category':  'unknown',
-            'reason':          f'Low topic confidence ({confidence:.1%}) — text may not match any known topic in the corpus. The corpus covers 2012–2022 HuffPost news; topics outside this domain (e.g. AI research, climate policy) have no dedicated cluster.',
-            'real_years':      [],
+            'is_real_event':     None,
+            'verdict':           'UNCERTAIN',
+            'event_name':        topic_label,
+            'event_category':    'unknown',
+            'reason':            f'Low topic confidence ({confidence:.1%}) — text may not match any known topic in the corpus. The corpus covers 2012–2022 HuffPost news; topics outside this domain (e.g. AI research, climate policy) have no dedicated cluster.',
+            'real_years':        [],
             'event_probability': 0.5,
         }
 
-    # ── Step 1: GBM ML classifier (primary path) ──────────────────────────
+    # Step 1: GBM ML classifier (primary path)
     if _gbm_clf_api is not None and _topic_feat_api is not None:
         feat_row = _topic_feat_api[_topic_feat_api['topic_id'] == tid]
         if len(feat_row) > 0 and _signal_df is not None:
@@ -199,82 +188,61 @@ def classify_real_event(topic_id, topic_label, confidence):
                 prob = float(_gbm_clf_api.predict_proba(feat)[0][1])
                 if prob >= 0.75:
                     return {
-                        'is_real_event':   True,
-                        'verdict':         'VERIFIED_REAL',
-                        'event_name':      topic_label,
-                        'event_category':  'news_event',
-                        'reason':          f'GBM classifier: P(real)={prob:.2f} (high confidence)',
-                        'real_years':      [],
-                        'event_probability': round(prob, 3),
+                        'is_real_event': True, 'verdict': 'VERIFIED_REAL',
+                        'event_name': topic_label, 'event_category': 'news_event',
+                        'reason': f'GBM classifier: P(real)={prob:.2f} (high confidence)',
+                        'real_years': [], 'event_probability': round(prob, 3),
                     }
                 elif prob >= 0.55:
                     return {
-                        'is_real_event':   True,
-                        'verdict':         'LIKELY_REAL',
-                        'event_name':      topic_label,
-                        'event_category':  'news_event',
-                        'reason':          f'GBM classifier: P(real)={prob:.2f} (moderate confidence)',
-                        'real_years':      [],
-                        'event_probability': round(prob, 3),
+                        'is_real_event': True, 'verdict': 'LIKELY_REAL',
+                        'event_name': topic_label, 'event_category': 'news_event',
+                        'reason': f'GBM classifier: P(real)={prob:.2f} (moderate confidence)',
+                        'real_years': [], 'event_probability': round(prob, 3),
                     }
                 elif prob >= 0.40:
                     return {
-                        'is_real_event':   None,
-                        'verdict':         'UNCERTAIN',
-                        'event_name':      topic_label,
-                        'event_category':  'unknown',
-                        'reason':          f'GBM classifier: P(real)={prob:.2f} — borderline, flagged for review',
-                        'real_years':      [],
-                        'event_probability': round(prob, 3),
+                        'is_real_event': None, 'verdict': 'UNCERTAIN',
+                        'event_name': topic_label, 'event_category': 'unknown',
+                        'reason': f'GBM classifier: P(real)={prob:.2f} — borderline, flagged for review',
+                        'real_years': [], 'event_probability': round(prob, 3),
                     }
                 elif prob >= 0.25:
                     return {
-                        'is_real_event':   False,
-                        'verdict':         'LIKELY_NOISE',
-                        'event_name':      topic_label,
-                        'event_category':  'general',
-                        'reason':          f'GBM classifier: P(real)={prob:.2f} — background topic',
-                        'real_years':      [],
-                        'event_probability': round(prob, 3),
+                        'is_real_event': False, 'verdict': 'LIKELY_NOISE',
+                        'event_name': topic_label, 'event_category': 'general',
+                        'reason': f'GBM classifier: P(real)={prob:.2f} — background topic',
+                        'real_years': [], 'event_probability': round(prob, 3),
                     }
                 else:
                     return {
-                        'is_real_event':   False,
-                        'verdict':         'VERIFIED_NOISE',
-                        'event_name':      topic_label,
-                        'event_category':  'lifestyle',
-                        'reason':          f'GBM classifier: P(real)={prob:.2f} — confirmed non-event',
-                        'real_years':      [],
-                        'event_probability': round(prob, 3),
+                        'is_real_event': False, 'verdict': 'VERIFIED_NOISE',
+                        'event_name': topic_label, 'event_category': 'lifestyle',
+                        'reason': f'GBM classifier: P(real)={prob:.2f} — confirmed non-event',
+                        'real_years': [], 'event_probability': round(prob, 3),
                     }
             except Exception:
-                pass  # fall through to GT dict
+                pass
 
-    # ── Step 2: Ground-truth dict (secondary, when GBM unavailable) ────────
+    # Step 2: Ground-truth dict
     for kw, data in GROUND_TRUTH_EVENTS.items():
         if kw in label_lower:
             if data['verified'] and len(data['real_years']) > 0:
                 return {
-                    'is_real_event':   True,
-                    'verdict':         'VERIFIED_REAL',
-                    'event_name':      data['event_name'],
-                    'event_category':  data['category'],
-                    'reason':          f"Ground-truth: {data['event_name']} in {data['real_years']}",
-                    'real_years':      data['real_years'],
-                    'event_probability': 0.95,
+                    'is_real_event': True, 'verdict': 'VERIFIED_REAL',
+                    'event_name': data['event_name'], 'event_category': data['category'],
+                    'reason': f"Ground-truth: {data['event_name']} in {data['real_years']}",
+                    'real_years': data['real_years'], 'event_probability': 0.95,
                 }
             else:
                 return {
-                    'is_real_event':   False,
-                    'verdict':         'VERIFIED_NOISE',
-                    'event_name':      data['event_name'],
-                    'event_category':  data['category'],
-                    'reason':          'Ground-truth: lifestyle/entertainment content',
-                    'real_years':      [],
-                    'event_probability': 0.05,
+                    'is_real_event': False, 'verdict': 'VERIFIED_NOISE',
+                    'event_name': data['event_name'], 'event_category': data['category'],
+                    'reason': 'Ground-truth: lifestyle/entertainment content',
+                    'real_years': [], 'event_probability': 0.05,
                 }
 
-    # ── Step 3: Phase 3 signal data heuristic ──────────────────────────────
+    # Step 3: Phase 3 signal data heuristic
     if _signal_df is not None:
         topic_signals = _signal_df[_signal_df['topic_id'] == tid]
         if len(topic_signals) > 0:
@@ -286,39 +254,31 @@ def classify_real_event(topic_id, topic_label, confidence):
                     gm.iloc[0]['verification_status'] in ('VERIFIED', 'VERIFIED_GROUNDTRUTH'))
             if is_emerging and gdelt_verified:
                 return {
-                    'is_real_event':   True,
-                    'verdict':         'VERIFIED_REAL',
-                    'event_name':      topic_label,
-                    'event_category':  'news_event',
-                    'reason':          'EMERGING signal + GDELT verified',
-                    'real_years':      [],
-                    'event_probability': 0.85,
+                    'is_real_event': True, 'verdict': 'VERIFIED_REAL',
+                    'event_name': topic_label, 'event_category': 'news_event',
+                    'reason': 'EMERGING signal + GDELT verified',
+                    'real_years': [], 'event_probability': 0.85,
                 }
 
-    # ── Step 4: Lifestyle keyword fallback ─────────────────────────────────
+    # Step 4: Lifestyle keyword fallback
     lifestyle_kws = ['fashion', 'beauty', 'wedding', 'parenting', 'holiday',
                      'entertainment', 'style', 'celebrity', 'food', 'travel']
     if any(kw in label_lower for kw in lifestyle_kws):
         return {
-            'is_real_event':   False,
-            'verdict':         'VERIFIED_NOISE',
-            'event_name':      topic_label,
-            'event_category':  'lifestyle',
-            'reason':          'Lifestyle/entertainment topic — not a discrete news event.',
-            'real_years':      [],
-            'event_probability': 0.1,
+            'is_real_event': False, 'verdict': 'VERIFIED_NOISE',
+            'event_name': topic_label, 'event_category': 'lifestyle',
+            'reason': 'Lifestyle/entertainment topic — not a discrete news event.',
+            'real_years': [], 'event_probability': 0.1,
         }
 
-    # ── Step 5: Final fallback ──────────────────────────────────────────────
+    # Step 5: Final fallback
     return {
-        'is_real_event':   None,
-        'verdict':         'UNCERTAIN',
-        'event_name':      topic_label,
-        'event_category':  'unknown',
-        'reason':          'Run phase3_detector.py to train GBM classifier for this topic.',
-        'real_years':      [],
-        'event_probability': 0.5,
+        'is_real_event': None, 'verdict': 'UNCERTAIN',
+        'event_name': topic_label, 'event_category': 'unknown',
+        'reason': 'Run phase3_detector.py to train GBM classifier for this topic.',
+        'real_years': [], 'event_probability': 0.5,
     }
+
 
 # ============================================
 # HELPER: Text cleaning
@@ -349,12 +309,12 @@ def compute_live_token_attribution(text):
     rows = []
     for i, tok in enumerate(tokens):
         masked_tokens = tokens[:i] + tokens[i + 1:]
-        masked_text = ' '.join(masked_tokens).strip()
+        masked_text   = ' '.join(masked_tokens).strip()
         if not masked_text:
             score = 1.0
         else:
             e_masked = normalize(np.array([embedding_model.encode([masked_text])[0]]))[0]
-            score = 1.0 - float(np.dot(e_original, e_masked))
+            score    = 1.0 - float(np.dot(e_original, e_masked))
         rows.append({'position': i, 'token': tok, 'attribution_score': round(float(score), 6)})
 
     rows.sort(key=lambda x: x['attribution_score'], reverse=True)
@@ -371,17 +331,19 @@ def compute_live_token_attribution(text):
 print("=" * 60)
 print("DYNAMIC TREND & EVENT DETECTOR — API Server (FIXED)")
 print("=" * 60)
+print(f"  ROOT_DIR  : {ROOT_DIR}")
+print(f"  CACHE_DIR : {CACHE_DIR}")
 
 REQUIRED_CORE = ['embeddings.npy', 'tpi_reduced.npy', 'df.pkl', 'meta.pkl', 'bertopic_model']
 missing = [f for f in REQUIRED_CORE if not os.path.exists(os.path.join(CACHE_DIR, f))]
 if missing:
     print(f"\n❌ Cache missing: {missing}")
-    print("Run bert_model.py first:\n\n    python3 bert_model.py\n")
+    print("Run bert_model.py first:\n\n    python3 src/bert_model.py\n")
     import sys; sys.exit(1)
 
 print("\nLoading from bert_model.py cache...")
-embeddings     = np.load(os.path.join(CACHE_DIR, 'embeddings.npy'))        # (N, 384)
-embeddings_svd = np.load(os.path.join(CACHE_DIR, 'tpi_reduced.npy'))       # (N, 50)
+embeddings     = np.load(os.path.join(CACHE_DIR, 'embeddings.npy'))
+embeddings_svd = np.load(os.path.join(CACHE_DIR, 'tpi_reduced.npy'))
 df             = pickle.load(open(os.path.join(CACHE_DIR, 'df.pkl'), 'rb'))
 meta           = pickle.load(open(os.path.join(CACHE_DIR, 'meta.pkl'), 'rb'))
 
@@ -416,7 +378,7 @@ print("Loading BERTopic model...")
 topic_model = BERTopic.load(os.path.join(CACHE_DIR, 'bertopic_model'),
                             embedding_model=embedding_model)
 
-# Load GBM classifier (trained by phase3_detector.py)
+# Load GBM classifier
 _gbm_clf_api    = None
 _topic_feat_api = None
 _gbm_path       = os.path.join(CACHE_DIR, 'gbm_classifier.pkl')
@@ -437,35 +399,24 @@ else:
     bow_vec.fit(docs)
     pickle.dump(bow_vec, open(bow_vec_path, 'wb'))
 
-# ============================================
-# PRE-COMPUTE TOPIC CENTROIDS  [FIX A]
-# ============================================
-# Compute once at startup in SBERT 384-dim space (not SVD space).
-# SBERT space is what the model was semantically trained in.
-# Using SVD-reduced space caused all queries to collapse to Topic 0
-# because SVD compresses variance and the largest cluster dominates.
-# ============================================
-
-# AFTER — load saved median centroids from bert_model.py (exact match)
+# Pre-compute topic centroids
 print("\nLoading pre-computed SBERT median centroids...")
 topic_centroids_sbert = {}
 topic_sizes           = {}
 topic_year_range      = {}
 
-_cent_path = os.path.join(CACHE_DIR, 'sbert_centroids.pkl')
+_cent_path       = os.path.join(CACHE_DIR, 'sbert_centroids.pkl')
 _global_mean_api = None
 
 if os.path.exists(_cent_path):
     _saved = pickle.load(open(_cent_path, 'rb'))
     if isinstance(_saved, dict) and 'centroids' in _saved:
-        # New format with global_mean
         topic_centroids_sbert = {int(k): v for k, v in _saved['centroids'].items()}
-        _global_mean_api = _saved['global_mean']
+        _global_mean_api      = _saved['global_mean']
         print(f"  Loaded {len(topic_centroids_sbert)} whitened centroids + global_mean")
     else:
-        # Old format fallback (pre-whitening cache)
         topic_centroids_sbert = {int(k): v for k, v in _saved.items()}
-        _global_mean_api = embeddings.mean(axis=0)
+        _global_mean_api      = embeddings.mean(axis=0)
         print(f"  Loaded {len(topic_centroids_sbert)} centroids (old format, recomputing mean)")
 else:
     print("  sbert_centroids.pkl not found — recomputing with whitening")
@@ -474,12 +425,11 @@ else:
     for t in df['bert_topic'].unique():
         if t == -1:
             continue
-        t_idx = df[df['bert_topic'] == t].index.tolist()
+        t_idx    = df[df['bert_topic'] == t].index.tolist()
         centroid = _embs_c[t_idx].mean(axis=0)
         topic_centroids_sbert[int(t)] = normalize(centroid.reshape(1, -1))[0]
     print(f"  Recomputed {len(topic_centroids_sbert)} whitened centroids")
 
-# Always compute sizes and year ranges (lightweight)
 for t in df['bert_topic'].unique():
     if t == -1:
         continue
@@ -488,7 +438,6 @@ for t in df['bert_topic'].unique():
     years = df.iloc[t_idx]['year'].values
     topic_year_range[int(t)] = (int(years.min()), int(years.max()))
 
-# Load Phase 3 data for real/fake classification
 _load_phase3_data()
 print(f"  Phase 3 signals loaded: {_signal_df is not None}")
 print(f"  GDELT data loaded:      {_gdelt_df is not None}")
@@ -534,11 +483,10 @@ def get_sbert_similarity(text_a, text_b):
 
 
 # ============================================
-# ENDPOINT: POST /api/predict  [FIX A + FIX B + FIX C]
+# ENDPOINT: POST /api/predict
 # ============================================
 
 def _api_sbert_doc_fallback(cleaned_text, topic_scores_dict, df, embeddings):
-    """Mirror of _sbert_doc_similarity_fallback from bert_model.py."""
     emb_q      = embedding_model.encode([cleaned_text], show_progress_bar=False)[0]
     emb_q_norm = normalize(emb_q.reshape(1, -1))[0]
     best_t, best_s = -1, -1.0
@@ -555,21 +503,6 @@ def _api_sbert_doc_fallback(cleaned_text, topic_scores_dict, df, embeddings):
 
 @app.route('/api/predict', methods=['POST'])
 def predict_topic():
-    """
-    Classify a new article into a BERTopic topic AND determine
-    whether it describes a real verified news event or noise.
-
-    FIX A: Uses c-TF-IDF keyword overlap (mirrors bert_model.py predict_article_topic).
-           Falls back to corpus-grounded healthcare signal → SBERT mean-of-docs.
-           Centroid cosine removed — was biased toward Topic 4 for all generic queries.
-
-    FIX B: Adds real/fake event classification to every prediction.
-
-    FIX C: confidence is raw c-TF-IDF overlap score. Capped at 100% for display.
-           Top-3 candidates always built from SBERT centroid cosine for transparency.
-
-    Expects JSON: { "text": "article text here" }
-    """
     data = request.json or {}
     text = str(data.get('text', '')).strip()
     if not text:
@@ -577,7 +510,6 @@ def predict_topic():
 
     cleaned = clean_text(text)
 
-    # ── Step 1: Build query vocabulary (unigrams + bigrams) ───────────────
     words_list  = cleaned.split()
     tokens      = set(words_list)
     bigrams     = set(
@@ -586,7 +518,6 @@ def predict_topic():
     )
     query_vocab = tokens | bigrams
 
-    # ── Step 2: c-TF-IDF weighted overlap (primary path) ─────────────────
     topic_scores = {}
     for t_id in [t for t in df['bert_topic'].unique() if t != -1]:
         topic_words = topic_model.get_topic(t_id)
@@ -602,7 +533,6 @@ def predict_topic():
     best_topic = max(topic_scores, key=topic_scores.get)
     best_sim   = topic_scores[best_topic]
 
-    # ── Step 3: Fallback when zero c-TF-IDF overlap ───────────────────────
     if best_sim == 0.0:
         healthcare_signals = {
             'affordable', 'obamacare', 'medicaid', 'mandate',
@@ -634,35 +564,19 @@ def predict_topic():
 
     if best_sim < LOW_CONFIDENCE_THRESHOLD:
         return jsonify({
-            'topic_id':          -1,
-            'label':             'No Matching Topic Found',
-            'confidence':        round(best_sim, 4),
-            'confidence_pct':    f"{min(best_sim, 1.0) * 100:.1f}%",
-            'topic':             {
-                'id':    -1,
-                'name':  'No Matching Topic Found',
-                'words': [],
-                'count': 0
-            },
-            'top3_candidates':   [],
-
-            'is_real_event':     None,
-            'event_verdict':     'UNCERTAIN',
-            'event_name':        'Unknown',
-            'event_category':    'unknown',
-            'event_reason':      f'Topic confidence too low ({best_sim * 100:.1f}%) — this text does not match any known topic in the corpus. The corpus covers 2012–2022 HuffPost news (politics, COVID, lifestyle). Topics like AI research, climate policy, sports, and business have no dedicated cluster.',
-            'real_years':        [],
-            'event_probability': 0.0,
-
-            'similar_articles':  [],
-            'input_text':        text,
+            'topic_id': -1, 'label': 'No Matching Topic Found',
+            'confidence': round(best_sim, 4),
+            'confidence_pct': f"{min(best_sim, 1.0) * 100:.1f}%",
+            'topic': {'id': -1, 'name': 'No Matching Topic Found', 'words': [], 'count': 0},
+            'top3_candidates': [],
+            'is_real_event': None, 'event_verdict': 'UNCERTAIN',
+            'event_name': 'Unknown', 'event_category': 'unknown',
+            'event_reason': f'Topic confidence too low ({best_sim * 100:.1f}%) — this text does not match any known topic in the corpus.',
+            'real_years': [], 'event_probability': 0.0,
+            'similar_articles': [], 'input_text': text,
         })
 
-    # ── Step 4: Top-3 candidates via SBERT centroid cosine ───────────────
-    # Always use centroid cosine for top-3 display — this gives meaningful
-    # similarity values even when the primary path used c-TF-IDF overlap
-    # (which produces scores > 1.0) or the fallback path (all scores = 0.0).
-    query_emb      = embedding_model.encode([cleaned])[0]
+    query_emb       = embedding_model.encode([cleaned])[0]
     query_norm_top3 = normalize(query_emb.reshape(1, -1))[0]
 
     centroid_sims = {
@@ -681,18 +595,15 @@ def predict_topic():
             'similarity': round(sim, 4)
         })
 
-    # ── Step 5: Get topic info ────────────────────────────────────────────
     tid  = int(best_topic)
     info = topic_info_cache.get(tid, topic_info_cache.get(-1))
 
-    # ── Step 6: Real/Fake event classification ────────────────────────────
     event_verdict = classify_real_event(
         topic_id=tid,
         topic_label=topic_semantic_labels.get(tid, f'Topic {tid}'),
         confidence=best_sim
     )
 
-    # ── Step 7: Top-5 similar corpus articles in SBERT space ─────────────
     query_emb_2d = query_emb.reshape(1, -1)
     sims         = cosine_similarity(query_emb_2d, embeddings)[0]
     top_idx      = sims.argsort()[-5:][::-1]
@@ -709,15 +620,12 @@ def predict_topic():
         })
 
     return jsonify({
-        # Topic prediction
         'topic_id':          tid,
         'label':             info.get('name', 'Unknown') if info else 'Unknown',
         'confidence':        round(best_sim, 4),
-        'confidence_pct':    f"{min(best_sim, 1.0) * 100:.1f}%",  # capped at 100%
+        'confidence_pct':    f"{min(best_sim, 1.0) * 100:.1f}%",
         'topic':             info,
         'top3_candidates':   top3,
-
-        # Real/Fake verdict
         'is_real_event':     event_verdict['is_real_event'],
         'event_verdict':     event_verdict['verdict'],
         'event_name':        event_verdict['event_name'],
@@ -725,14 +633,13 @@ def predict_topic():
         'event_reason':      event_verdict['reason'],
         'real_years':        event_verdict.get('real_years', []),
         'event_probability': event_verdict.get('event_probability', 0.5),
-
-        # Source articles
         'similar_articles':  similar,
         'input_text':        text,
     })
 
+
 # ============================================
-# ALL REMAINING ENDPOINTS (unchanged from original)
+# ALL REMAINING ENDPOINTS
 # ============================================
 
 @app.route('/api/topics', methods=['GET'])
@@ -746,7 +653,7 @@ def get_topics():
 def get_plot(name):
     safe_name = os.path.basename(name)
     for folder in ['bert_plots', 'model_plots', 'eda_plots']:
-        path = os.path.join(folder, safe_name)
+        path = os.path.join(ROOT_DIR, folder, safe_name)
         if os.path.exists(path):
             return jsonify({'image': encode_image(path), 'name': safe_name})
     return jsonify({'error': f"Plot '{safe_name}' not found"}), 404
@@ -774,9 +681,10 @@ def compare_representations():
         )
     })
 
+
 @app.route('/api/coherence', methods=['GET'])
 def get_coherence():
-    path = 'bert_plots/topic_coherence.csv'
+    path = os.path.join(ROOT_DIR, 'bert_plots', 'topic_coherence.csv')
     if not os.path.exists(path):
         return jsonify({'error': 'Run bert_model.py first'}), 404
     cdf = pd.read_csv(path)
@@ -790,7 +698,7 @@ def get_coherence():
 
 @app.route('/api/separation', methods=['GET'])
 def get_separation():
-    path = 'bert_plots/context_separation_scores.json'
+    path = os.path.join(ROOT_DIR, 'bert_plots', 'context_separation_scores.json')
     if not os.path.exists(path):
         return jsonify({'error': 'Run bert_model.py first'}), 404
     with open(path) as f:
@@ -808,7 +716,7 @@ def get_separation():
 
 @app.route('/api/purity', methods=['GET'])
 def get_purity():
-    path = 'bert_plots/bert_topic_purity.csv'
+    path = os.path.join(ROOT_DIR, 'bert_plots', 'bert_topic_purity.csv')
     if not os.path.exists(path):
         return jsonify({'error': 'Run bert_model.py first'}), 404
     pdf = pd.read_csv(path)
@@ -822,7 +730,7 @@ def get_purity():
 
 @app.route('/api/attribution/<topic_id>', methods=['GET'])
 def get_attribution(topic_id):
-    path = 'bert_plots/token_attribution.csv'
+    path = os.path.join(ROOT_DIR, 'bert_plots', 'token_attribution.csv')
     if not os.path.exists(path):
         return jsonify({'error': 'Run bert_model.py first'}), 404
     adf = pd.read_csv(path)
@@ -843,7 +751,7 @@ def get_live_attribution():
     text = str(data.get('text', '')).strip()
     if not text:
         return jsonify({'error': 'No text provided'}), 400
-    rows = compute_live_token_attribution(text)
+    rows       = compute_live_token_attribution(text)
     top_tokens = sorted(rows, key=lambda x: x['attribution_score'], reverse=True)[:5]
     return jsonify({'input_text': text, 'count': len(rows), 'rows': rows,
                     'top_tokens': [{'token': t['token'], 'attribution_score': t['attribution_score'],
@@ -852,7 +760,7 @@ def get_live_attribution():
 
 @app.route('/api/gdelt', methods=['GET'])
 def get_gdelt():
-    path = 'bert_plots/gdelt_verification.csv'
+    path = os.path.join(ROOT_DIR, 'bert_plots', 'gdelt_verification.csv')
     if not os.path.exists(path):
         return jsonify({'error': 'Run phase3_detector.py first'}), 404
     gdf = pd.read_csv(path)
@@ -876,7 +784,7 @@ def get_gdelt():
 
 @app.route('/api/events', methods=['GET'])
 def get_events():
-    path = 'bert_plots/phase3_final_events.json'
+    path = os.path.join(ROOT_DIR, 'bert_plots', 'phase3_final_events.json')
     if not os.path.exists(path):
         return jsonify({'error': 'Run phase3_detector.py first'}), 404
     with open(path) as f:
@@ -886,7 +794,7 @@ def get_events():
 
 @app.route('/api/signals', methods=['GET'])
 def get_signals():
-    path = 'bert_plots/signal_classifications.csv'
+    path = os.path.join(ROOT_DIR, 'bert_plots', 'signal_classifications.csv')
     if not os.path.exists(path):
         return jsonify({'error': 'Run phase3_detector.py first'}), 404
     sdf = pd.read_csv(path).sort_values(['year', 'velocity'], ascending=[True, False])
@@ -911,26 +819,31 @@ def get_summary():
 
 
 # ============================================
-# SERVE FRONTEND
+# SERVE FRONTEND  [FIX E — ROOT_DIR absolute paths]
 # ============================================
 
 @app.route('/')
 def serve_frontend():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(ROOT_DIR, 'index.html')
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    return send_from_directory(os.path.join(ROOT_DIR, 'assets'), filename)
 
 @app.route('/bert_plots/<path:filename>')
 def serve_bert_plots(filename):
-    return send_from_directory('bert_plots', filename)
+    return send_from_directory(os.path.join(ROOT_DIR, 'bert_plots'), filename)
 
 @app.route('/model_plots/<path:filename>')
 def serve_model_plots(filename):
-    return send_from_directory('model_plots', filename)
+    return send_from_directory(os.path.join(ROOT_DIR, 'model_plots'), filename)
 
 @app.route('/eda_plots/<path:filename>')
 def serve_eda_plots(filename):
-    return send_from_directory('eda_plots', filename)
+    return send_from_directory(os.path.join(ROOT_DIR, 'eda_plots'), filename)
 
 
 if __name__ == '__main__':
-    print("\n✅ Open your browser at: http://localhost:8000")
+    print(f"\n✅ Open your browser at: http://localhost:8000")
+    print(f"   Serving index.html from: {ROOT_DIR}")
     app.run(host='0.0.0.0', port=8000, debug=False)
