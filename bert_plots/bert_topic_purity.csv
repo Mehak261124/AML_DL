@@ -1,9 +1,15 @@
 topic,label,top_category,purity,size
-2,the / to / of,POLITICS,0.3576,2265
-0,the / to / in,POLITICS,0.3306,3412
-4,the / to / in,POLITICS,0.2699,489
-6,the / to / you,WELLNESS,0.225,120
-7,of / the / and,WELLNESS,0.215,107
-3,the / and / to,WELLNESS,0.2093,1209
-5,the / of / and,WELLNESS,0.1628,129
-1,the / to / and,POLITICS,0.1604,2861
+6,COVID-19 Pandemic 2020,POLITICS,0.4611,785
+2,Trump-Stormy Daniels Scandal,POLITICS,0.3677,1017
+4,COVID-19 Vaccination Campaign,POLITICS,0.3664,876
+3,Trump Presidency 2017-21,POLITICS,0.3633,947
+0,Russia-Ukraine War 2022,POLITICS,0.2864,1079
+12,2016 Presidential Election (Hillary),POLITICS,0.2843,510
+10,Mueller Investigation 2017-19,POLITICS,0.2809,591
+8,2016 Democratic Primary,POLITICS,0.2511,713
+9,Trump Impeachment Era,U.S. NEWS,0.2475,707
+1,Fashion & Style Trends,WELLNESS,0.222,1027
+13,Holidays & Entertainment,WELLNESS,0.2105,266
+11,Wedding & Beauty,WELLNESS,0.1881,521
+7,2016 Presidential Election (Reform),POLITICS,0.153,732
+5,Parenting & Family Life,POLITICS,0.1006,865

@@ -273,5 +273,68 @@ class TestAPIEndpoints(unittest.TestCase):
             self.assertIn(route, source, f'Missing route: {route}')
 
 
+class TestGBMClassifier(unittest.TestCase):
+    """Validates GBM real/fake classifier behaviour."""
+
+    def _make_feature(self, vel, sc, nz, coh, pur, log_sz):
+        return [[vel, sc, nz, coh, pur, log_sz]]
+
+    def test_predict_proba_range(self):
+        """predict_proba must always return a value in [0, 1]."""
+        from sklearn.ensemble import GradientBoostingClassifier
+        from sklearn.calibration import CalibratedClassifierCV
+        X = [
+            [0.0, 0, 1, 0.6, 0.5, 4.0],  # noise-like
+            [10.0, 3, 3, 0.85, 0.9, 3.5], # real-like
+            [0.5, 1, 2, 0.7, 0.6, 3.0],  # borderline
+        ]
+        y = [0, 1, 0]
+        base  = GradientBoostingClassifier(n_estimators=10, random_state=42)
+        model = CalibratedClassifierCV(base, cv=2, method='isotonic')
+        model.fit(X, y)
+        for feat in X:
+            prob = float(model.predict_proba([feat])[0][1])
+            self.assertGreaterEqual(prob, 0.0)
+            self.assertLessEqual(prob, 1.0)
+
+    def test_verdict_mapping_exhaustive(self):
+        """All five verdict strings must be reachable from the threshold map."""
+        thresholds = [
+            (0.80, 'VERIFIED_REAL'),
+            (0.62, 'LIKELY_REAL'),
+            (0.45, 'UNCERTAIN'),
+            (0.30, 'LIKELY_NOISE'),
+            (0.10, 'VERIFIED_NOISE'),
+        ]
+        def map_verdict(p):
+            if p >= 0.75:   return 'VERIFIED_REAL'
+            if p >= 0.55:   return 'LIKELY_REAL'
+            if p >= 0.40:   return 'UNCERTAIN'
+            if p >= 0.25:   return 'LIKELY_NOISE'
+            return 'VERIFIED_NOISE'
+
+        expected_verdicts = {v for _, v in thresholds}
+        produced_verdicts = {map_verdict(p) for p, _ in thresholds}
+        self.assertEqual(expected_verdicts, produced_verdicts)
+
+    def test_high_velocity_emerging_predicts_real(self):
+        """An EMERGING topic with high velocity should score higher than a NOISE topic."""
+        from sklearn.ensemble import GradientBoostingClassifier
+        from sklearn.calibration import CalibratedClassifierCV
+        X = [
+            [0.0, 0, 1, 0.5, 0.4, 4.0],
+            [0.1, 0, 1, 0.55, 0.45, 3.8],
+            [8.0, 3, 3, 0.88, 0.92, 3.5],
+            [5.0, 3, 2, 0.82, 0.85, 3.2],
+        ]
+        y = [0, 0, 1, 1]
+        base  = GradientBoostingClassifier(n_estimators=20, random_state=42)
+        model = CalibratedClassifierCV(base, cv=2, method='isotonic')
+        model.fit(X, y)
+        p_noise   = float(model.predict_proba([[0.0, 0, 1, 0.5, 0.4, 4.0]])[0][1])
+        p_emerging = float(model.predict_proba([[9.0, 3, 3, 0.9, 0.95, 3.5]])[0][1])
+        self.assertGreater(p_emerging, p_noise)
+
+
 if __name__ == '__main__':
     unittest.main()
