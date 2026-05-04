@@ -284,13 +284,14 @@ class TestGBMClassifier(unittest.TestCase):
         from sklearn.ensemble import GradientBoostingClassifier
         from sklearn.calibration import CalibratedClassifierCV
         X = [
-            [0.0, 0, 1, 0.6, 0.5, 4.0],  # noise-like
-            [10.0, 3, 3, 0.85, 0.9, 3.5], # real-like
-            [0.5, 1, 2, 0.7, 0.6, 3.0],  # borderline
+            [0.0, 0, 1, 0.6, 0.5, 4.0],   # class 0
+            [10.0, 3, 3, 0.85, 0.9, 3.5], # class 1
+            [0.5, 1, 2, 0.7, 0.6, 3.0],   # class 0
+            [9.0, 3, 3, 0.88, 0.92, 3.4], # class 1 added
         ]
-        y = [0, 1, 0]
+        y = [0, 1, 0, 1]
         base  = GradientBoostingClassifier(n_estimators=10, random_state=42)
-        model = CalibratedClassifierCV(base, cv=2, method='isotonic')
+        model = CalibratedClassifierCV(base, cv=2, method='sigmoid')
         model.fit(X, y)
         for feat in X:
             prob = float(model.predict_proba([feat])[0][1])
